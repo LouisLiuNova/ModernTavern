@@ -264,6 +264,11 @@ function action(a: string, m: Message) {
       };
       return;
     }
+    if (a.startsWith("select-candidate:")) {
+      const index = Number(a.split(":")[1]);
+      if (Number.isInteger(index) && index >= 0 && index < m.candidates.length)
+        switchCandidate(s, index - m.selected);
+    }
     if (a === "previous" || a === "next")
       switchCandidate(s, a === "previous" ? -1 : 1);
     if (a === "regenerate") {

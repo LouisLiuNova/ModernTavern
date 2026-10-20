@@ -1547,3 +1547,5 @@ button.candidate-count {
   display: block;
   margin-top: 8px;
 }
+
+.candidate-preview { display: block; max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted-foreground); }
