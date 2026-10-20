@@ -241,11 +241,11 @@ textarea::placeholder {
   margin-bottom: 20px;
   padding: 24px 26px 13px;
   border-radius: 14px;
-  background: var(--card);
-  border: 1px solid color-mix(in srgb, var(--border) 14%, transparent);
+  background: color-mix(in srgb, var(--card) 55%, var(--background));
+  border: 1px solid color-mix(in srgb, var(--border) 9%, transparent);
 }
 .message.user {
-  background: var(--user-surface);
+  background: color-mix(in srgb, var(--user-surface) 55%, var(--background));
   border-color: transparent;
   padding-top: 19px;
   padding-bottom: 9px;
