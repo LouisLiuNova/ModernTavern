@@ -9,10 +9,10 @@ import {
   Palette,
   RotateCcw,
 } from "lucide-vue-next";
-import { themes } from "../../domain/appearance";
+import { themes, defaults } from "../../domain/appearance";
 import { Button } from "../ui/button";
 const { appearance: a } = useAppearance();
-defineEmits<{ reset: [] }>();
+
 </script>
 <template>
   <div class="settings-section">
@@ -110,8 +110,8 @@ defineEmits<{ reset: [] }>();
   </div>
   <div class="settings-footer">
     <NuxtLink to="/themes" class="text-link">查看完整主题色板 ↗</NuxtLink
-    ><Button variant="ghost" size="sm" @click="$emit('reset')"
-      ><RotateCcw />恢复初始数据</Button
+    ><Button variant="ghost" size="sm" @click="Object.assign(a, defaults)"
+      ><RotateCcw />恢复默认外观</Button
     >
   </div>
 </template>

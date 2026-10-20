@@ -333,7 +333,8 @@ await check("历史删除范围、会话删除保留独立分支与重置", asyn
     p.locator(".session-main").filter({ hasText: "Branch #1" }),
   ).toHaveCount(1);
   await closeModal(p);
-  await p.getByRole("button", { name: "演示场景", exact: true }).click();
+  await p.getByRole("button", { name: "打开会话列表", exact: true }).click();
+  await p.getByRole("button", { name: "数据管理", exact: true }).click();
   await p
     .getByRole("button", { name: "恢复初始演示数据", exact: true })
     .click();

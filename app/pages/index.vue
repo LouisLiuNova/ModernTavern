@@ -13,6 +13,7 @@ import {
   Feather,
   Sparkles,
   Circle,
+  Database,
   Check,
   Info,
   TriangleAlert,
@@ -61,7 +62,7 @@ const {
   tell,
 } = useChat();
 const panel = ref<
-  "sessions" | "connection" | "appearance" | "scenarios" | null
+  "sessions" | "connection" | "appearance" | "scenarios" | "data" | null
 >(null);
 const scroller = ref<HTMLElement>(),
   following = ref(true),
@@ -572,7 +573,7 @@ function completeElsewhere() {
         @select="switchSession"
         @create="createSession"
         @remove="askDeleteSession"
-    /></Modal>
+    /><div class="settings-footer"><Button variant="ghost" @click="panel = 'data'"><Database />数据管理</Button></div></Modal>
     <Modal
       :open="panel === 'connection'"
       title="连接配置"
@@ -586,8 +587,12 @@ function completeElsewhere() {
       description="选一种心境，让文字有自己的温度。"
       wide
       @update:open="panel = $event ? 'appearance' : null"
-      ><AppearancePanel @reset="askReset"
+      ><AppearancePanel
     /></Modal>
+    <Modal :open="panel === 'data'" title="数据管理" description="管理当前浏览器中的本原型演示数据。" @update:open="panel = $event ? 'data' : null">
+      <p class="muted">恢复会清除本原型的会话、全部候选、草稿、连接与外观设置，并重新载入示例。独立分支也在清除范围内，不影响其他站点。</p>
+      <Button variant="destructive" @click="askReset">恢复初始演示数据</Button>
+    </Modal>
     <Modal
       :open="panel === 'scenarios'"
       title="演示场景"
@@ -622,7 +627,7 @@ function completeElsewhere() {
           variant="outline"
           @click="tell('模拟本地保存失败：本次仅展示错误，未破坏浏览器数据。', undefined, 'error')"
           >预览存储失败反馈</Button
-        ><Button variant="ghost" @click="askReset">恢复初始演示数据</Button>
+        >
       </div></Modal
     >
     <Modal
