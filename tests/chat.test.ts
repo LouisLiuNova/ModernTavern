@@ -196,3 +196,27 @@ test("模拟任务返回可观察的候选，文字和终态即时通知界面",
   expect(text).toBe("第一段");
   unwatch();
 });
+
+test("新建会话统一名称但 ID 独立，发送不自动改名", () => {
+  const a = newSession(), b = newSession();
+  expect(a.name).toBe("新会话");
+  expect(b.name).toBe("新会话");
+  expect(a.id).not.toBe(b.id);
+  expect(Number.isFinite(a.updated)).toBe(true);
+  send(a, "不会变成标题的第一句话");
+  expect(a.name).toBe("新会话");
+});
+test("恢复保留已有名称及时间，分支沿用源名称与独立编号", () => {
+  const state = seed();
+  const old = state.sessions[0]!;
+  old.name = "会话 2026-10-20 12:34:56";
+  const timestamp = old.updated;
+  const restored = parseState(JSON.stringify(state));
+  expect(restored.sessions[0]!.name).toBe(old.name);
+  expect(restored.sessions[0]!.updated).toBe(timestamp);
+  expect(newSession("自定义名称").name).toBe("自定义名称");
+  const fresh = newSession();
+  fresh.messages.push(message("user", "开场"));
+  expect(branch(fresh, fresh.messages[0]!.id).name).toBe("新会话 Branch #1");
+  expect(branch(fresh, fresh.messages[0]!.id).name).toBe("新会话 Branch #2");
+});

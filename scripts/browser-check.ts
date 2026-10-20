@@ -804,6 +804,26 @@ await check("所有文本输入统一使用边线焦点，无外扩色框", asyn
   expect(errors).toEqual([]);
   await context.close();
 });
+await check("UX-08：统一默认名称，同名会话草稿与恢复保持独立", async () => {
+  const { page: p, context } = await fresh();
+  for (const draft of ["第一段独立草稿", "第二段独立草稿"]) {
+    await p.getByLabel("新建会话", { exact: true }).click();
+    await expect(p.locator("h1")).toHaveText("新会话");
+    await p.getByLabel("消息输入", { exact: true }).fill(draft);
+  }
+  await p.reload();
+  await expect(p.locator("h1")).toHaveText("新会话");
+  await expect(p.getByLabel("消息输入", { exact: true })).toHaveValue("第二段独立草稿");
+  await p.getByRole("button", { name: "故事列表", exact: true }).click();
+  const matches = p.locator(".session-main").filter({ has: p.getByText("新会话", { exact: true }) });
+  await expect(matches).toHaveCount(2);
+  await matches.filter({ hasText: "尚未开始" }).nth(1).click();
+  await expect(p.getByLabel("消息输入", { exact: true })).toHaveValue("第一段独立草稿");
+  await expect(p.locator("h1")).toHaveText("新会话");
+  expect(errors).toEqual([]);
+  expect(external).toEqual([]);
+  await context.close();
+});
 await check("运行期间无页面异常与外部模型请求", async () => {
   expect(errors).toEqual([]);
   expect(external).toEqual([]);

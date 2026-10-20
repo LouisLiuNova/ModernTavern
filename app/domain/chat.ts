@@ -60,9 +60,7 @@ export function message(role: Message["role"], text: string): Message {
     selected: 0,
   };
 }
-export function newSession(
-  name = `会话 ${new Date().toLocaleString("sv-SE")}`,
-): Session {
+export function newSession(name = "新会话"): Session {
   return {
     id: id(),
     name,
