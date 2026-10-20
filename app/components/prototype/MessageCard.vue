@@ -149,18 +149,20 @@ async function copy() {
       <div class="row gap-small">
         <Button
           variant="ghost"
-          size="icon-sm"
+          size="sm"
           :aria-label="`复制第 ${index + 1} 条消息`"
+          :title="copied ? '已复制' : '复制原始 Markdown'"
           @click="copy"
-          ><Check v-if="copied" /><Copy v-else /></Button
+          ><Check v-if="copied" /><Copy v-else /><span>{{ copied ? "已复制" : "复制" }}</span></Button
         ><DropdownMenu
           ><DropdownMenuTrigger as-child
             ><Button
               variant="ghost"
-              size="icon-sm"
+              size="sm"
               :aria-label="`第 ${index + 1} 条消息更多操作`"
+              title="编辑、分支与删除消息"
               data-edit-trigger
-              ><MoreHorizontal /></Button></DropdownMenuTrigger
+              ><MoreHorizontal /><span>更多</span></Button></DropdownMenuTrigger
           ><DropdownMenuContent align="start" class="menu" @close-auto-focus="editing && $event.preventDefault()"
             ><DropdownMenuItem
               :disabled="locked"

@@ -366,8 +366,9 @@ textarea::placeholder {
   color: var(--muted-foreground);
 }
 .message-tools [data-slot="button"] {
-  height: 29px;
-  font-size: 11px;
+  min-height: 36px;
+  height: auto;
+  font-size: 13px;
 }
 .message-tools [data-slot="button"] > svg {
   width: 13px;
@@ -379,7 +380,7 @@ textarea::placeholder {
   gap: 1px;
 }
 .candidate-count {
-  font-size: 10px;
+  font-size: 13px;
   min-width: 32px;
   text-align: center;
   font-variant-numeric: tabular-nums;
@@ -1064,9 +1065,9 @@ textarea::placeholder {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.7;
-  color: var(--muted-foreground);
+  color: var(--foreground);
   margin-top: 15px;
   flex-wrap: wrap;
 }
@@ -1375,7 +1376,7 @@ textarea::placeholder {
     width: 26px;
   }
   .regenerate-label {
-    font-size: 10px;
+    font-size: 12px;
   }
   .composer-dock {
     padding: 5px 14px max(6px, env(safe-area-inset-bottom));
@@ -1556,3 +1557,7 @@ button.candidate-count {
 
 .story-list-link { display: inline-flex; align-items: center; gap: 5px; min-height: 36px; font-size: 13px; color: var(--foreground); text-decoration: underline; text-underline-offset: 4px; }
 @media (max-width: 640px) { .story-list-link { min-height: 44px; } .story-subtitle-right { display: none; } }
+
+.message-tools [data-slot="button"] { padding-inline: 8px; }
+.continue-help { margin: 7px; font-size: 12px; }
+@media (max-width: 640px) { .message-tools > .row { flex-wrap: wrap; } .candidate-controls { flex-wrap: wrap; } .composer-bottom { flex-wrap: wrap; gap: 4px; } .composer-bottom [data-slot="button"] { min-height: 44px; font-size: 12px; } }
