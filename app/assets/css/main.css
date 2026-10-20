@@ -1,0 +1,6 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@custom-variant dark (&:is(.dark *));
+@theme inline { --color-background: var(--background); --color-foreground: var(--foreground); --color-primary: var(--primary); --color-primary-foreground: var(--primary-foreground); --color-border: var(--border); --color-ring: var(--ring); --color-accent: var(--accent); --color-accent-foreground: var(--foreground); --color-muted-foreground: var(--muted-foreground); }
+:root { --background:#f5f8f7;--foreground:#253c3b;--primary:#286663;--primary-foreground:#fff;--border:#899f9c;--ring:#286663;--accent:#e0edeb;--muted-foreground:#536b68; }
+body { margin:0;background:var(--background);color:var(--foreground);font-family:system-ui,sans-serif; }
