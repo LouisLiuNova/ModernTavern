@@ -1553,3 +1553,6 @@ button.candidate-count {
 .toast[data-kind="info"] .toast-icon { color: var(--info); }
 .toast[data-kind="warning"] .toast-icon { color: var(--warning); }
 .toast[data-kind="error"] .toast-icon { color: var(--destructive); }
+
+.story-list-link { display: inline-flex; align-items: center; gap: 5px; min-height: 36px; font-size: 13px; color: var(--foreground); text-decoration: underline; text-underline-offset: 4px; }
+@media (max-width: 640px) { .story-list-link { min-height: 44px; } .story-subtitle-right { display: none; } }

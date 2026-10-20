@@ -14,6 +14,7 @@ import {
   Sparkles,
   Circle,
   Database,
+  Library,
   Check,
   Info,
   TriangleAlert,
@@ -480,7 +481,7 @@ function completeElsewhere() {
             /></Button>
           </div>
           <div class="story-subtitle">
-            <BookOpen :size="13" /><span>{{
+            <button class="story-list-link" aria-label="故事列表" @click="panel = 'sessions'"><Library :size="16" />故事列表</button><span>·</span><span>{{
               appearance.layout === "reading" ? "阅读式" : "气泡式"
             }}</span
             ><span>·</span
