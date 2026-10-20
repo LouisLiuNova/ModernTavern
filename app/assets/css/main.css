@@ -1114,13 +1114,15 @@ textarea::placeholder {
   }
 }
 .toast {
-  position: fixed;
-  bottom: 30px;
-  right: 26px;
+  position: relative;
+  flex-shrink: 0;
+  width: min(640px, calc(100% - 28px));
+  margin: 8px auto;
   display: flex;
   align-items: center;
   gap: 10px;
-  max-width: min(430px, calc(100vw - 28px));
+  max-height: 20dvh;
+  overflow: auto;
   padding: 13px 14px;
   border-radius: 12px;
   border: 1px solid var(--border);
@@ -1440,10 +1442,7 @@ textarea::placeholder {
   .empty-story h2 {
     font-size: 20px;
   }
-  .toast {
-    bottom: 18px;
-    right: 14px;
-  }
+
   .bubble .message.user {
     max-width: 94%;
   }

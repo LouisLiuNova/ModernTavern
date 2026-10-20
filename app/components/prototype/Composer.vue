@@ -142,8 +142,9 @@ function update(e: Event) {
       <span class="muted">{{ modelValue.length }} 字符</span
       ><Button variant="outline" @click="expanded = false"
         ><Minimize2 />收起写作</Button
-      ><Button
-        :disabled="locked || accepting || !modelValue.trim()"
+      ><Button v-if="locked" @click="emit('stop')"><Square />停止生成</Button><Button
+        v-else
+        :disabled="accepting || !modelValue.trim()"
         @click="
           emit('send');
           expanded = false;

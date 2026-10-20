@@ -81,6 +81,11 @@ const confirmation = ref<{
   save?: boolean;
 } | null>(null);
 const confirmRunning = ref(false);
+watch(notice, (value, _, onCleanup) => {
+  if (!value || value.session || value.kind === "error" || value.kind === "warning") return;
+  const timer = setTimeout(() => { if (notice.value === value) notice.value = null; }, 5000);
+  onCleanup(() => clearTimeout(timer));
+});
 function attempt(fn: () => void) {
   try {
     fn();
@@ -406,6 +411,28 @@ function completeElsewhere() {
         /></Button>
       </div>
     </header>
+    <Transition name="toast"
+      ><aside v-if="notice" class="toast" :data-kind="notice.kind" :role="notice.kind === 'error' ? 'alert' : 'status'">
+        <span class="toast-icon"><component :is="{ success: Check, info: Info, warning: TriangleAlert, error: CircleAlert }[notice.kind]" /></span
+        ><button
+          v-if="notice.session"
+          class="toast-link"
+          @click="
+            switchSession(notice.session);
+            notice = null;
+          "
+        >
+          {{ notice.text }}<span>查看会话 →</span></button
+        ><span v-else>{{ notice.text }}</span
+        ><Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label="关闭通知"
+          @click="notice = null"
+          ><X
+        /></Button></aside
+    ></Transition>
+
     <div
       v-if="storageError || appearanceError"
       class="storage-warning"
@@ -534,27 +561,6 @@ function completeElsewhere() {
         <Circle :size="6" fill="currentColor" />本地交互原型 · 不会调用真实模型
       </p>
     </div>
-    <Transition name="toast"
-      ><aside v-if="notice" class="toast" :data-kind="notice.kind" :role="notice.kind === 'error' ? 'alert' : 'status'">
-        <span class="toast-icon"><component :is="{ success: Check, info: Info, warning: TriangleAlert, error: CircleAlert }[notice.kind]" /></span
-        ><button
-          v-if="notice.session"
-          class="toast-link"
-          @click="
-            switchSession(notice.session);
-            notice = null;
-          "
-        >
-          {{ notice.text }}<span>查看会话 →</span></button
-        ><span v-else>{{ notice.text }}</span
-        ><Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label="关闭通知"
-          @click="notice = null"
-          ><X
-        /></Button></aside
-    ></Transition>
     <Modal
       :open="panel === 'sessions'"
       title="你的故事"
