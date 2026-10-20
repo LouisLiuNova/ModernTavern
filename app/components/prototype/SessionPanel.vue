@@ -16,6 +16,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "../ui/dropdown-menu";
+import { markdownPreview } from "../../domain/markdown";
 import { content, busy, type Session } from "../../domain/chat";
 const { state, sorted } = useChat();
 const emit = defineEmits<{
@@ -81,7 +82,7 @@ function rename(s: Session) {
             }}</time></span
           ><span class="session-preview">{{
             s.messages.length
-              ? content(s.messages.at(-1)!)
+              ? markdownPreview(content(s.messages.at(-1)!)) || "此回复未收到文字。"
               : "尚未开始，故事在等你。"
           }}</span
           ><span class="session-meta"
