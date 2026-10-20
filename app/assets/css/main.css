@@ -156,18 +156,12 @@ textarea::placeholder {
   background: color-mix(in srgb, var(--border) 35%, transparent);
   margin: 0 10px;
 }
-.online-dot {
-  height: 6px;
-  width: 6px;
-  background: var(--success);
-  border-radius: 50%;
-}
-.online-dot.offline {
-  background: var(--warning);
-}
 .connection-trigger {
   font-size: 12px;
-  gap: 8px;
+  gap: 7px;
+  color: var(--primary);
+  background: var(--accent);
+  border-color: color-mix(in srgb, var(--primary) 50%, var(--border));
 }
 .reading-scroll {
   flex: 1;
@@ -1296,14 +1290,12 @@ textarea::placeholder {
   }
   .header-actions > .connection-trigger {
     width: auto;
-    max-width: 105px;
-    padding: 0 4px;
-    font-size: 10px;
+    max-width: none;
+    padding: 0 8px;
+    font-size: 11px;
   }
-  .connection-trigger span:nth-child(2) {
-    max-width: 70px;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  .connection-chevron {
+    display: none;
   }
   .header-divider {
     margin: 0 4px;

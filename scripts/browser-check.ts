@@ -370,7 +370,9 @@ await check("连接配置、无连接拦截、模型列表失败与手填", asyn
   await p.getByRole("button", { name: "保存连接", exact: true }).click();
   await expect(p.getByText("第二套演示", { exact: true })).toBeVisible();
   await closeModal(p);
-  await expect(p.locator(".connection-trigger")).toContainText("manual-demo");
+  await expect(
+    p.getByRole("button", { name: "连接配置", exact: true }),
+  ).toHaveAttribute("title", /manual-demo/);
   await context.close();
 });
 await check(
@@ -615,6 +617,56 @@ await check("手机回车只换行、原始 Markdown 复制", async () => {
   const text = await p.evaluate(() => navigator.clipboard.readText());
   expect(text).toContain("*门上的铜铃轻轻晃了一下。*");
   await context.close();
+});
+await check("连接配置入口：清晰文案、窄屏完整显示和键盘焦点", async () => {
+  for (const [width, height] of [
+    [360, 800],
+    [390, 844],
+    [549, 668],
+    [1440, 1000],
+  ]) {
+    const { page: p, context } = await fresh(width);
+    await p.setViewportSize({ width, height });
+    const trigger = p.locator(".connection-trigger");
+    await expect(trigger).toHaveAccessibleName("连接配置");
+    await expect(trigger).toHaveText("连接配置");
+    await expect(trigger).toHaveAttribute("aria-haspopup", "dialog");
+    expect(
+      await p
+        .locator(".app-header")
+        .evaluate((e) => e.scrollWidth <= e.clientWidth),
+    ).toBe(true);
+    expect(
+      await trigger
+        .locator("span")
+        .evaluate((e) => e.scrollWidth <= e.clientWidth),
+    ).toBe(true);
+    await trigger.click();
+    await expect(
+      p.getByRole("heading", { name: "连接配置", exact: true }),
+    ).toBeVisible();
+    await expect(trigger).toHaveAttribute("aria-expanded", "true");
+    await p.keyboard.press("Escape");
+    await expect(trigger).toBeFocused();
+    await expect(trigger).toHaveAttribute("aria-expanded", "false");
+    await p.getByRole("button", { name: "演示场景", exact: true }).click();
+    await p
+      .getByRole("button", { name: "模拟未选择连接", exact: true })
+      .click();
+    await closeModal(p);
+    await expect(trigger).toHaveText("连接配置");
+    await trigger.click();
+    await expect(
+      p.getByRole("heading", { name: "连接配置", exact: true }),
+    ).toBeVisible();
+    await closeModal(p);
+    await expect(p.locator(".modal")).not.toBeVisible();
+    await expect(trigger).toHaveAttribute("aria-expanded", "false");
+    await p.screenshot({ path: `${artifacts}/connection-entry-${width}.png` });
+    await context.close();
+  }
+  expect(errors).toEqual([]);
+  expect(external).toEqual([]);
 });
 await check("运行期间无页面异常与外部模型请求", async () => {
   expect(errors).toEqual([]);

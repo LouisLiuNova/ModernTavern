@@ -344,13 +344,19 @@ function completeElsewhere() {
       </button>
       <div class="header-actions">
         <Button
-          variant="ghost"
+          variant="outline"
           class="connection-trigger"
+          aria-label="连接配置"
+          aria-haspopup="dialog"
+          :aria-expanded="panel === 'connection'"
+          :title="
+            connection
+              ? `管理 API 地址、密钥与模型 · 当前模型：${connection.model}`
+              : '添加和管理 API 地址、密钥与模型'
+          "
           @click="panel = 'connection'"
-          ><span class="online-dot" :class="{ offline: !connection }" /><span>{{
-            connection?.model || "未连接"
-          }}</span
-          ><ChevronDown :size="13" /></Button
+          ><PlugZap :size="16" /><span>连接配置</span
+          ><ChevronDown class="connection-chevron" :size="13" /></Button
         ><span class="header-divider" /><Button
           variant="ghost"
           size="icon"
@@ -524,8 +530,8 @@ function completeElsewhere() {
     /></Modal>
     <Modal
       :open="panel === 'connection'"
-      title="连接"
-      description="选择故事的讲述者。当前配置仅供模拟演示。"
+      title="连接配置"
+      description="管理 API 地址、密钥与模型。当前配置仅供模拟演示。"
       @update:open="panel = $event ? 'connection' : null"
       ><ConnectionPanel
     /></Modal>
