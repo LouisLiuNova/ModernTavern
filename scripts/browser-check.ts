@@ -668,6 +668,57 @@ await check("连接配置入口：清晰文案、窄屏完整显示和键盘焦�
   expect(errors).toEqual([]);
   expect(external).toEqual([]);
 });
+await check("回到底部平滑滚动、主动中断与减少动态效果", async () => {
+  const { page: p, context } = await fresh(390);
+  await p.emulateMedia({ reducedMotion: "no-preference" });
+  const area = p.locator(".reading-scroll");
+  const resetTop = async () => {
+    await area.evaluate((el) => {
+      el.scrollTop = 0;
+      el.dispatchEvent(new Event("scroll"));
+    });
+    await expect(
+      p.getByRole("button", { name: "回到底部", exact: true }),
+    ).toBeVisible();
+  };
+  await resetTop();
+  await p.getByRole("button", { name: "回到底部", exact: true }).click();
+  const intermediate = await area.evaluate(async (el) => {
+    for (let i = 0; i < 60; i++) {
+      await new Promise(requestAnimationFrame);
+      const max = el.scrollHeight - el.clientHeight;
+      if (el.scrollTop > 0 && el.scrollTop < max - 10) return true;
+    }
+    return false;
+  });
+  expect(intermediate).toBe(true);
+  await expect
+    .poll(() =>
+      area.evaluate((el) => el.scrollHeight - el.clientHeight - el.scrollTop),
+    )
+    .toBeLessThan(2);
+  await expect(
+    p.getByRole("button", { name: "回到底部", exact: true }),
+  ).toHaveCount(0);
+  await resetTop();
+  await p.getByRole("button", { name: "回到底部", exact: true }).click();
+  await area.dispatchEvent("wheel", { deltaY: -100 });
+  const stopped = await area.evaluate((el) => el.scrollTop);
+  await p.waitForTimeout(700);
+  expect(await area.evaluate((el) => el.scrollTop)).toBeCloseTo(stopped, 0);
+  await expect(
+    p.getByRole("button", { name: "回到底部", exact: true }),
+  ).toBeVisible();
+  await p.emulateMedia({ reducedMotion: "reduce" });
+  await resetTop();
+  await p.getByRole("button", { name: "回到底部", exact: true }).click();
+  expect(
+    await area.evaluate(
+      (el) => el.scrollHeight - el.clientHeight - el.scrollTop,
+    ),
+  ).toBeLessThan(2);
+  await context.close();
+});
 await check("运行期间无页面异常与外部模型请求", async () => {
   expect(errors).toEqual([]);
   expect(external).toEqual([]);

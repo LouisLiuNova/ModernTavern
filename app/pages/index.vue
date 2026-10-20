@@ -121,7 +121,31 @@ function guard(next: () => void) {
     next();
   }
 }
+let returningToBottom = false;
+function cancelReturn() {
+  if (!returningToBottom) return;
+  returningToBottom = false;
+  const el = scroller.value;
+  if (el) el.scrollTo({ top: el.scrollTop, behavior: "instant" });
+}
+function returnToBottom() {
+  const el = scroller.value;
+  if (!el) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    jumpBottom();
+    return;
+  }
+  returningToBottom = true;
+  el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+}
+function finishReturn() {
+  if (!returningToBottom) return;
+  returningToBottom = false;
+  onScroll();
+  if (following.value) jumpBottom();
+}
 function jumpBottom() {
+  cancelReturn();
   following.value = true;
   nextTick(() => {
     const el = scroller.value;
@@ -268,11 +292,13 @@ function askReset() {
 function onScroll() {
   const el = scroller.value;
   if (!el || restoring) return;
-  following.value = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+  if (!returningToBottom)
+    following.value = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
   if (current.value) current.value.position = el.scrollTop;
 }
 let restoring = false;
 async function restore() {
+  cancelReturn();
   restoring = true;
   await nextTick();
   const el = scroller.value;
@@ -288,7 +314,7 @@ watch(() => state.current, restore);
 watch(
   () => current.value?.messages.map((m) => content(m)).join(""),
   () => {
-    if (following.value && !restoring) jumpBottom();
+    if (following.value && !restoring && !returningToBottom) jumpBottom();
   },
 );
 onMounted(() => {
@@ -395,6 +421,10 @@ function completeElsewhere() {
       class="reading-scroll"
       :class="appearance.layout"
       @scroll.passive="onScroll"
+      @scrollend="finishReturn"
+      @wheel.passive="cancelReturn"
+      @touchstart.passive="cancelReturn"
+      @keydown="cancelReturn"
     >
       <div class="story-container">
         <div class="story-heading">
@@ -475,7 +505,7 @@ function completeElsewhere() {
         class="jump-bottom"
         variant="outline"
         size="sm"
-        @click="jumpBottom"
+        @click="returnToBottom"
         ><ArrowDown />回到底部</Button
       ><Composer
         v-if="current"
