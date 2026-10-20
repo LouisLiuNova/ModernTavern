@@ -1469,8 +1469,8 @@ textarea::placeholder {
 }
 
 [data-slot="dialog-overlay"] {
-  background: color-mix(in srgb, var(--foreground) 35%, transparent);
-  backdrop-filter: blur(4px);
+  background: rgb(0 0 0 / 28%);
+  backdrop-filter: blur(2px);
 }
 @media (max-width: 640px) {
   .header-actions > [data-slot="button"],
@@ -1561,3 +1561,5 @@ button.candidate-count {
 .message-tools [data-slot="button"] { padding-inline: 8px; }
 .continue-help { margin: 7px; font-size: 12px; }
 @media (max-width: 640px) { .message-tools > .row { flex-wrap: wrap; } .candidate-controls { flex-wrap: wrap; } .composer-bottom { flex-wrap: wrap; gap: 4px; } .composer-bottom [data-slot="button"] { min-height: 44px; font-size: 12px; } }
+
+.dark [data-slot="dialog-overlay"] { background: rgb(0 0 0 / 52%); }
