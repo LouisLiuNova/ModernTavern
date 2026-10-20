@@ -1500,3 +1500,44 @@ button.candidate-count {
     min-height: 44px;
   }
 }
+
+.connection-key-field {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.connection-key-field input {
+  flex: 1;
+  min-width: 0;
+}
+
+.model-test-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.model-endpoint {
+  overflow-wrap: anywhere;
+  font-size: 11px;
+}
+.connection-success {
+  color: var(--success);
+  background: var(--success-bg);
+}
+.prototype-response {
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+.prototype-response summary {
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--muted-foreground);
+  margin-bottom: 10px;
+}
+.prototype-response label,
+.prototype-response select,
+.prototype-response small {
+  display: block;
+  margin-top: 8px;
+}

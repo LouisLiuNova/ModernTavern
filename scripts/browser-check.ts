@@ -356,17 +356,132 @@ await check("连接配置、无连接拦截、模型列表失败与手填", asyn
   await p.locator(".connection-trigger").click();
   await p.getByRole("button", { name: "添加演示连接", exact: true }).click();
   await p.getByLabel("连接名称", { exact: true }).fill("第二套演示");
+  await p.getByText("原型演示响应", { exact: true }).click();
   await p
-    .getByRole("button", { name: "模拟模型列表失败", exact: true })
+    .getByLabel("GET /models 模拟结果", { exact: true })
+    .selectOption("failure");
+  await p
+    .getByRole("button", { name: "测试连接（刷新模型）", exact: true })
     .click();
-  await expect(
-    p.getByText("模型列表获取失败。", { exact: false }),
-  ).toBeVisible();
+  await expect(p.getByRole("status", { name: "连接测试状态" })).toContainText(
+    "模拟模型列表获取失败",
+  );
   await p.getByLabel("模型 ID", { exact: true }).fill("manual-demo");
   await p.getByRole("button", { name: "保存连接", exact: true }).click();
   await expect(p.getByText("第二套演示", { exact: true })).toBeVisible();
   await closeModal(p);
   await expect(p.locator(".connection-trigger")).toContainText("manual-demo");
+  await context.close();
+});
+await check(
+  "API Key 可空且不持久化，模型刷新成功、失败重试与空列表",
+  async () => {
+    const { page: p, context } = await fresh(390);
+    await p.locator(".connection-trigger").click();
+    await p.getByRole("button", { name: "添加演示连接", exact: true }).click();
+    await p.getByLabel("连接名称", { exact: true }).fill("连接测试演示");
+    const key = p.getByLabel("API Key（可留空）", { exact: true });
+    await expect(key).toHaveAttribute("type", "password");
+    await expect(
+      p.getByText("未填写 API Key，不发送 Authorization 请求头", {
+        exact: false,
+      }),
+    ).toBeVisible();
+    await key.fill("prototype-browser-key");
+    await p.getByRole("button", { name: "显示 API Key", exact: true }).click();
+    await expect(key).toHaveAttribute("type", "text");
+    await p.getByRole("button", { name: "隐藏 API Key", exact: true }).click();
+    await expect(key).toHaveAttribute("type", "password");
+    await p
+      .getByLabel("模型 ID", { exact: true })
+      .fill("manual-stays-selected");
+    await p
+      .getByRole("button", { name: "测试连接（刷新模型）", exact: true })
+      .click();
+    await expect(
+      p.getByRole("button", { name: "正在测试连接…", exact: true }),
+    ).toBeDisabled();
+    await expect(p.getByRole("status", { name: "连接测试状态" })).toContainText(
+      "模型列表已刷新（3 个）",
+    );
+    await expect(p.locator("#demo-models option")).toHaveCount(3);
+    await expect(p.getByLabel("模型 ID", { exact: true })).toHaveValue(
+      "manual-stays-selected",
+    );
+    await p.getByText("原型演示响应", { exact: true }).click();
+    await p
+      .getByLabel("GET /models 模拟结果", { exact: true })
+      .selectOption("failure");
+    await p
+      .getByRole("button", { name: "测试连接（刷新模型）", exact: true })
+      .click();
+    await expect(p.getByRole("status", { name: "连接测试状态" })).toContainText(
+      "模拟模型列表获取失败",
+    );
+    await p
+      .getByLabel("GET /models 模拟结果", { exact: true })
+      .selectOption("empty");
+    await p
+      .getByRole("button", { name: "重试连接（刷新模型）", exact: true })
+      .click();
+    await expect(p.getByRole("status", { name: "连接测试状态" })).toContainText(
+      "模型列表为空",
+    );
+    await expect(p.locator("#demo-models option")).toHaveCount(0);
+    await p
+      .getByLabel("GET /models 模拟结果", { exact: true })
+      .selectOption("success");
+    await p
+      .getByRole("button", { name: "测试连接（刷新模型）", exact: true })
+      .click();
+    await expect(p.locator("#demo-models option")).toHaveCount(3);
+    await p.getByRole("button", { name: "保存连接", exact: true }).click();
+    expect(
+      await p.evaluate(() =>
+        JSON.stringify({
+          local: { ...localStorage },
+          session: { ...sessionStorage },
+        }),
+      ),
+    ).not.toContain("prototype-browser-key");
+    await p
+      .getByRole("button", { name: "编辑连接 连接测试演示", exact: true })
+      .click();
+    await expect(key).toHaveValue("prototype-browser-key");
+    await closeModal(p);
+    await p.reload();
+    await p.locator(".connection-trigger").click();
+    await p
+      .getByRole("button", { name: "编辑连接 连接测试演示", exact: true })
+      .click();
+    await expect(
+      p.getByLabel("API Key（可留空）", { exact: true }),
+    ).toHaveValue("");
+    await p.getByRole("button", { name: "保存连接", exact: true }).click();
+    await expect(p.getByText("连接测试演示", { exact: true })).toBeVisible();
+    await context.close();
+  },
+);
+await check("修改连接地址取消旧模型刷新，防止迟到列表覆盖", async () => {
+  const { page: p, context } = await fresh();
+  await p.locator(".connection-trigger").click();
+  await p.getByRole("button", { name: "添加演示连接", exact: true }).click();
+  await p.clock.install({ time: new Date("2026-10-20T08:00:00Z") });
+  await p.clock.pauseAt(new Date("2026-10-20T08:00:01Z"));
+  await p
+    .getByRole("button", { name: "测试连接（刷新模型）", exact: true })
+    .click();
+  await p
+    .getByLabel("API Base URL（仅演示）", { exact: true })
+    .fill("https://other.example.invalid/v1");
+  await p.clock.runFor(1000);
+  await expect(p.locator("#demo-models option")).toHaveCount(0);
+  await expect(
+    p.getByRole("status", { name: "连接测试状态" }),
+  ).not.toBeVisible();
+  await expect(p.locator(".model-endpoint")).toContainText(
+    "https://other.example.invalid/v1/models",
+  );
   await context.close();
 });
 await check("刷新中断恢复、上滑不跟随与断线保留", async () => {

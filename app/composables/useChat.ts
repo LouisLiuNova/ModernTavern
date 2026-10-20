@@ -1,3 +1,4 @@
+import { useConnectionKeys } from "./useConnectionKeys";
 import { useAppearance } from "./useAppearance";
 import { reactive, computed, ref, watch, effectScope } from "vue";
 import {
@@ -186,6 +187,7 @@ export function useChat() {
     if (state.current === s.id) select(state.sessions[0]?.id || "");
   }
   function reset() {
+    useConnectionKeys().clearKeys();
     for (const timer of timers.values()) clearTimeout(timer);
     timers.clear();
     accepting.clear();
