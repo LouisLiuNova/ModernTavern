@@ -43,10 +43,10 @@ function rename(s: Session) {
       <Search :size="17" /><Input
         v-model="query"
         aria-label="搜索会话"
-        placeholder="寻找一段故事……"
+        placeholder="按故事名称搜索……"
       />
     </div>
-    <Button @click="emit('create')"><Plus />新会话</Button>
+    <Button @click="query = ''; emit('create')"><Plus />新会话</Button>
   </div>
   <div class="session-list">
     <article
@@ -120,5 +120,6 @@ function rename(s: Session) {
     <p v-if="!filtered.length" class="empty-note">
       {{ query ? "没有找到这段故事。" : "还没有会话，开始写下第一句吧。" }}
     </p>
+    <div v-if="query && !filtered.length" class="row end"><Button variant="outline" @click="query = ''">清空搜索</Button></div>
   </div>
 </template>
