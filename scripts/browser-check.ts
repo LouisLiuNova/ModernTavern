@@ -278,9 +278,21 @@ await check("编辑跳转三选项、取消确认、分支隔离和候选删除"
   await p.getByRole("menuitem", { name: "从这里分支", exact: true }).click();
   await expect(p.locator("h1")).toHaveText("雨落在旧书店 Branch #1");
   await p.getByRole("button", { name: "下一个候选", exact: true }).click();
-  await p.getByRole("button", { name: "删除当前候选", exact: true }).click();
+  const chosen = await p
+    .locator(".message")
+    .last()
+    .locator(".prose-story")
+    .innerText();
+  await p.getByRole("button", { name: "管理候选", exact: true }).click();
+  await p
+    .getByRole("menuitem", { name: "删除候选 1 · 未选中", exact: true })
+    .click();
+  await expect(p.getByRole("dialog")).toContainText("当前选中的回复保持不变");
   await p.getByRole("button", { name: "确认删除候选", exact: true }).click();
   await expect(p.locator(".candidate-count")).toHaveText("1 / 1");
+  await expect(p.locator(".message").last().locator(".prose-story")).toHaveText(
+    chosen,
+  );
   await p.getByRole("button", { name: "删除当前候选", exact: true }).click();
   await expect(p.getByRole("dialog")).toContainText("同时移除该 AI 消息");
   await p.getByRole("button", { name: "确认删除候选", exact: true }).click();

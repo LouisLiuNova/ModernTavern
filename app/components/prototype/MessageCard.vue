@@ -171,8 +171,27 @@ async function copy() {
           :disabled="locked"
           @click="emit('action', 'previous', message)"
           ><ChevronLeft /></Button
-        ><span class="candidate-count" aria-label="当前候选"
-          >{{ message.selected + 1 }} / {{ message.candidates.length }}</span
+        ><DropdownMenu
+          ><DropdownMenuTrigger as-child
+            ><button
+              class="candidate-count"
+              aria-label="管理候选"
+              :disabled="locked"
+            >
+              {{ message.selected + 1 }} / {{ message.candidates.length }}
+            </button></DropdownMenuTrigger
+          ><DropdownMenuContent class="menu" align="end"
+            ><DropdownMenuItem
+              v-for="(option, ci) in message.candidates"
+              :key="option.id"
+              class="danger-text"
+              @select="emit('action', `delete-candidate:${ci}`, message)"
+              ><Trash2 />删除候选 {{ ci + 1 }} ·
+              {{
+                ci === message.selected ? "当前" : "未选中"
+              }}</DropdownMenuItem
+            ></DropdownMenuContent
+          ></DropdownMenu
         ><Button
           variant="ghost"
           size="icon-sm"

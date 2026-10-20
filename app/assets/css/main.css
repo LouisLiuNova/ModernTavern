@@ -1487,3 +1487,16 @@ textarea::placeholder {
     margin-left: auto;
   }
 }
+
+button.candidate-count {
+  min-height: 32px;
+  padding: 0 4px;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 4px;
+}
+@media (max-width: 640px) {
+  button.candidate-count {
+    min-height: 44px;
+  }
+}
