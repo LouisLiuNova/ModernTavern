@@ -273,11 +273,11 @@ function action(a: string, m: Message) {
             : `删除候选 ${index + 1}？`,
         detail:
           s.messages.at(-1)!.candidates.length === 1
-            ? "这会同时移除该 AI 消息，相当于这层 AI 回复未发生过。"
+            ? "删除此候选，同时删除这条回复。"
             : index === m.selected
               ? "删除当前候选后会循环选择下一个候选，不会请求模型。"
               : "只删除此未选中候选，当前选中的回复保持不变。",
-        label: "确认删除候选",
+        label: m.candidates.length === 1 ? "删除候选及回复" : "确认删除候选",
         danger: true,
         run: () => deleteCandidate(s, index),
       };

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import MarkdownIt from "markdown-it";
+import { markdownPreview } from "../../domain/markdown";
 import {
   Copy,
   MoreHorizontal,
@@ -190,7 +191,7 @@ async function copy() {
           variant="ghost"
           size="icon-sm"
           aria-label="上一个候选"
-          :disabled="locked"
+          :disabled="locked || message.candidates.length < 2"
           @click="emit('action', 'previous', message)"
           ><ChevronLeft /></Button
         ><DropdownMenu
@@ -207,14 +208,14 @@ async function copy() {
               v-for="(option, ci) in message.candidates"
               :key="option.id"
               @select="emit('action', `select-candidate:${ci}`, message)"
-              ><Check v-if="ci === message.selected" /><span>候选 {{ ci + 1 }} · {{ ci === message.selected ? "当前 · " : "" }}{{ labels[option.status] || "已完成" }}<small class="candidate-preview">{{ option.text.slice(0, 60) || "未收到文字" }}</small></span></DropdownMenuItem
+              ><Check v-if="ci === message.selected" /><span>候选 {{ ci + 1 }} · {{ ci === message.selected ? "当前 · " : "" }}{{ labels[option.status] || "已完成" }}<small class="candidate-preview">{{ markdownPreview(option.text).slice(0, 60) || "未收到文字" }}</small></span></DropdownMenuItem
             ></DropdownMenuContent
           ></DropdownMenu
         ><Button
           variant="ghost"
           size="icon-sm"
           aria-label="下一个候选"
-          :disabled="locked"
+          :disabled="locked || message.candidates.length < 2"
           @click="emit('action', 'next', message)"
           ><ChevronRight /></Button
         ><span class="tool-divider" /><Button
@@ -224,7 +225,7 @@ async function copy() {
           :disabled="locked"
           @click="emit('action', 'regenerate', message)"
           ><RefreshCw /><span class="regenerate-label">重新生成</span></Button
-        ><DropdownMenu><DropdownMenuTrigger as-child><Button variant="ghost" size="icon-sm" aria-label="管理候选" :disabled="locked"><Trash2 /></Button></DropdownMenuTrigger><DropdownMenuContent class="menu" align="end"><DropdownMenuItem v-for="(option, ci) in message.candidates" :key="option.id" class="danger-text" @select="emit('action', `delete-candidate:${ci}`, message)"><Trash2 />删除候选 {{ ci + 1 }} · {{ ci === message.selected ? "当前" : "未选中" }}</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
+        ><DropdownMenu><DropdownMenuTrigger as-child><Button variant="ghost" size="sm" aria-label="删除候选" title="删除候选" :disabled="locked"><Trash2 /><span>删除候选</span></Button></DropdownMenuTrigger><DropdownMenuContent class="menu" align="end"><DropdownMenuItem v-for="(option, ci) in message.candidates" :key="option.id" class="danger-text" @select="emit('action', `delete-candidate:${ci}`, message)"><Trash2 />删除候选 {{ ci + 1 }} · {{ ci === message.selected ? "当前" : "未选中" }}</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
       </div>
     </footer>
   </article>

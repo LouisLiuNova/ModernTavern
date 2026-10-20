@@ -75,7 +75,7 @@ await check("UX-01/02/05：选择不生成、草稿保留、失败重试新增�
   await expect(p.locator(".message")).toHaveCount(4);
   await expect(p.getByLabel("停止生成", { exact: true })).toHaveCount(0);
   await scenario(p, "partialfail");
-  await p.getByRole("button", { name: "让叙事者继续", exact: true }).click();
+  await p.getByRole("button", { name: "沿此回复续写", exact: true }).click();
   await expect(p.locator(".message")).toHaveCount(5);
   await expect(input).toHaveValue("保留在输入区的草稿");
   await expect(p.getByRole("button", { name: "选择候选", exact: true })).toBeDisabled();
@@ -100,7 +100,7 @@ await check("UX-03/04：错误图标、顶部通知与全屏停止不重叠", as
   for (const width of [1440, 390, 360]) {
     const { page: p, context } = await fresh(width);
     await scenario(p, "slow");
-    await p.getByRole("button", { name: "让叙事者继续", exact: true }).click();
+    await p.getByRole("button", { name: "沿此回复续写", exact: true }).click();
     await p.getByRole("button", { name: "演示场景", exact: true }).click();
     await p.getByRole("button", { name: "预览存储失败反馈", exact: true }).click();
     await closeModal(p);
