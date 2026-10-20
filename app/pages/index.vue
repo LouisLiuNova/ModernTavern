@@ -549,6 +549,7 @@ function completeElsewhere() {
         :accepting="accepting.has(current.id)"
         :has-messages="!!current.messages.length"
         :last-role="current.messages.at(-1)?.role"
+        :incomplete="['failed', 'interrupted', 'stopped'].includes((current.messages.length ? candidate(current.messages.at(-1)!)?.status : '') || '')"
         @update:model-value="current.draft = $event"
         @send="sendMessage"
         @generate="continueStory"

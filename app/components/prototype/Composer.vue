@@ -16,6 +16,7 @@ const props = defineProps<{
   accepting: boolean;
   hasMessages: boolean;
   lastRole?: string;
+  incomplete?: boolean;
 }>();
 const emit = defineEmits<{
   "update:modelValue": [text: string];
@@ -105,6 +106,7 @@ function update(e: Event) {
       </div>
     </div>
     <p v-if="hasMessages" id="continue-help" class="muted continue-help">
+      <template v-if="incomplete">当前回复未完成；继续会沿所选内容新增叙事。如需重试，请使用消息旁的“重试生成”。</template>
       {{ lastRole === "assistant" ? "新增一段叙事" : "为已发送的消息生成回复" }}，无需发送草稿{{ modelValue.trim() ? "，当前草稿会保留" : "" }}。
     </p>
     <div class="composer-bottom">

@@ -126,6 +126,10 @@ async function copy() {
         v-else
         :size="13"
       />{{ labels[c.status] }}<span v-if="c.error"> · {{ c.error }}</span>
+      <template v-if="last && ['failed', 'interrupted', 'stopped'].includes(c.status)">
+        <span>重试会生成新候选，保留当前{{ content(message) ? "部分回复" : "空候选" }}。</span>
+        <Button v-if="!editing" variant="outline" size="sm" :disabled="locked" @click="emit('action', 'regenerate', message)"><RefreshCw />重试生成</Button>
+      </template>
     </div>
     <footer v-if="!editing" class="message-tools">
       <div class="row gap-small">
