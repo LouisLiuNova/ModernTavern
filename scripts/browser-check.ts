@@ -57,6 +57,14 @@ async function scenario(p: Page, value: string) {
   await p.getByLabel("下一次模拟生成").selectOption(value);
   await closeModal(p);
 }
+async function expectModels(p: Page, count: number) {
+  const trigger = p.getByRole("button", { name: "选择已加载模型", exact: true });
+  await trigger.click();
+  await expect(p.getByRole("menu")).toBeVisible();
+  await expect(p.locator(".model-option")).toHaveCount(count);
+  await p.keyboard.press("Escape");
+  await expect(p.getByRole("menu")).toHaveCount(0);
+}
 async function selectSession(p: Page, name: string) {
   await p.getByRole("button", { name: "打开会话列表", exact: true }).click();
   await p
@@ -410,7 +418,7 @@ await check(
     await expect(p.getByRole("status", { name: "连接测试状态" })).toContainText(
       "模型列表已刷新（3 个）",
     );
-    await expect(p.locator("#demo-models option")).toHaveCount(3);
+    await expectModels(p, 3);
     await expect(p.getByLabel("模型 ID", { exact: true })).toHaveValue(
       "manual-stays-selected",
     );
@@ -433,14 +441,14 @@ await check(
     await expect(p.getByRole("status", { name: "连接测试状态" })).toContainText(
       "模型列表为空",
     );
-    await expect(p.locator("#demo-models option")).toHaveCount(0);
+    await expectModels(p, 0);
     await p
       .getByLabel("GET /models 模拟结果", { exact: true })
       .selectOption("success");
     await p
       .getByRole("button", { name: "测试连接（刷新模型）", exact: true })
       .click();
-    await expect(p.locator("#demo-models option")).toHaveCount(3);
+    await expectModels(p, 3);
     await p.getByRole("button", { name: "保存连接", exact: true }).click();
     expect(
       await p.evaluate(() =>
@@ -481,7 +489,7 @@ await check("修改连接地址取消旧模型刷新，防止迟到列表覆盖"
     .getByLabel("API Base URL（仅演示）", { exact: true })
     .fill("https://other.example.invalid/v1");
   await p.clock.runFor(1000);
-  await expect(p.locator("#demo-models option")).toHaveCount(0);
+  await expectModels(p, 0);
   await expect(
     p.getByRole("status", { name: "连接测试状态" }),
   ).not.toBeVisible();
@@ -848,6 +856,57 @@ await check("会话列表唯一入口：标题下拉、键盘开启与焦点返�
     await expect(p.locator("h1")).toHaveText("新会话");
     await p.screenshot({ path: `${artifacts}/session-title-${width}.png` });
     expect(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await context.close();
+  }
+  expect(errors).toEqual([]);
+  expect(external).toEqual([]);
+});
+await check("模型选择下拉：显示全部模型、键盘选择与手填保存", async () => {
+  for (const width of [1440, 781, 390, 360]) {
+    const { page: p, context } = await fresh(width);
+    await p.setViewportSize({ width, height: 951 });
+    await p.getByRole("button", { name: "外观设置", exact: true }).click();
+    await p.getByRole("button", { name: "暗色", exact: true }).click();
+    await closeModal(p);
+    await p.locator(".connection-trigger").click();
+    await p.getByRole("button", { name: "添加演示连接", exact: true }).click();
+    await p.getByLabel("连接名称", { exact: true }).fill(`模型选择验收 ${width}`);
+    const field = p.getByLabel("模型 ID", { exact: true });
+    const trigger = p.getByRole("button", { name: "选择已加载模型", exact: true });
+    await trigger.click();
+    await expect(p.getByRole("menu")).toContainText("请先测试连接");
+    await p.keyboard.press("Escape");
+    await field.fill("自定义-model-before-refresh");
+    await p.getByRole("button", { name: "测试连接（刷新模型）", exact: true }).click();
+    await expect(trigger).toBeDisabled();
+    await expect(p.getByRole("status", { name: "连接测试状态" })).toContainText("模型列表已刷新（3 个）");
+    await expect(field).toHaveValue("自定义-model-before-refresh");
+    await trigger.click();
+    await expect(p.getByRole("menuitem")).toHaveCount(3);
+    await expect(p.getByRole("menu")).toBeInViewport();
+    await p.screenshot({ path: `${artifacts}/model-menu-${width}.png` });
+    const menu = await p.getByRole("menu").boundingBox();
+    expect(menu!.x).toBeGreaterThanOrEqual(0);
+    expect(menu!.x + menu!.width).toBeLessThanOrEqual(width);
+    expect(menu!.y).toBeGreaterThanOrEqual(0);
+    expect(menu!.y + menu!.height).toBeLessThanOrEqual(951);
+    await p.getByRole("menuitem", { name: "long-context-demo", exact: true }).click();
+    await expect(field).toHaveValue("long-context-demo");
+    await expect(p.getByRole("menu")).toHaveCount(0);
+    await expect(trigger).toBeFocused();
+    await trigger.press("ArrowDown");
+    await p.keyboard.press("End");
+    await p.keyboard.press("Enter");
+    await expect(field).toHaveValue("creative-demo");
+    await expect(p.getByRole("dialog")).toBeVisible();
+    await field.fill("manual-after-selection");
+    await trigger.click();
+    await p.keyboard.press("Escape");
+    await expect(field).toHaveValue("manual-after-selection");
+    await expect(p.getByRole("dialog")).toBeVisible();
+    await p.getByRole("button", { name: "保存连接", exact: true }).click();
+    await p.getByLabel(`编辑连接 模型选择验收 ${width}`, { exact: true }).click();
+    await expect(field).toHaveValue("manual-after-selection");
     await context.close();
   }
   expect(errors).toEqual([]);

@@ -1569,3 +1569,17 @@ button.candidate-count {
   .brand { font-size: 14px; }
   .header-divider { display: none; }
 }
+
+.model-picker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.model-picker input { flex: 1; }
+.model-picker [data-slot="button"] { flex-shrink: 0; }
+.model-menu { max-width: min(440px, calc(100vw - 40px)); }
+.model-option span { overflow-wrap: anywhere; min-width: 0; }
+@media (max-width: 640px) {
+  .model-picker [data-slot="button"] { min-width: 44px; min-height: 44px; }
+}

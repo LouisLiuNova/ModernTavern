@@ -1,0 +1,13 @@
+{
+  "browser": "Google Chrome",
+  "version": "155.0.8059.85",
+  "base": "http://127.0.0.1:3111",
+  "results": [
+    {
+      "name": "修改连接地址取消旧模型刷新，防止迟到列表覆盖",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "external": []
+}

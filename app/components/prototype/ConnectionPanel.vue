@@ -9,9 +9,16 @@ import {
   EyeOff,
   RefreshCw,
   LoaderCircle,
+  ChevronDown,
 } from "lucide-vue-next";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "../ui/dropdown-menu";
 import { id } from "../../domain/chat";
 import { useConnectionKeys } from "../../composables/useConnectionKeys";
 import {
@@ -226,14 +233,36 @@ function save() {
     <small class="muted"
       >仅用于当前连接。留空时不发送 Authorization 请求头。</small
     ><label for="model-id">模型 ID</label
-    ><Input
-      id="model-id"
-      v-model="model"
-      list="demo-models"
-      required
-    /><datalist id="demo-models">
-      <option v-for="id in modelOptions" :key="id" :value="id" />
-    </datalist>
+    >
+    <div class="model-picker">
+      <Input id="model-id" v-model="model" required />
+      <DropdownMenu>
+        <DropdownMenuTrigger as-child>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            aria-label="选择已加载模型"
+            :disabled="testStatus === 'loading'"
+          ><ChevronDown /></Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent class="menu model-menu" align="end">
+          <DropdownMenuItem
+            v-for="option in modelOptions"
+            :key="option"
+            class="model-option"
+            @select="model = option"
+          >
+            <Check v-if="model === option" :size="14" />
+            <span>{{ option }}</span>
+            <span v-if="model === option" class="muted">当前</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem v-if="!modelOptions.length" disabled>
+            {{ testStatus === 'success' ? '模型列表为空，可手动填写模型 ID。' : testStatus === 'error' ? '模型加载失败，请重试或手动填写。' : '请先测试连接以加载模型列表。' }}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
     <div class="model-test-row">
       <Button
         type="button"
