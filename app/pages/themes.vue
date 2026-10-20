@@ -4,6 +4,7 @@ import {
   Info,
   TriangleAlert,
   CircleAlert,
+  Trash2,
   ArrowLeft,
 } from "lucide-vue-next";
 import { themes } from "../domain/appearance";
@@ -59,7 +60,7 @@ const showSettings = ref(false);
               ><CircleAlert :size="13" class="inline" /> 生成失败</span
             >
           </div>
-          <Button variant="destructive">危险操作</Button>
+          <Button variant="destructive"><Trash2 />删除候选及回复</Button>
         </section></template
       >
     </div>

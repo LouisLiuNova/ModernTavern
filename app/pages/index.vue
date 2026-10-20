@@ -17,6 +17,7 @@ import {
   Check,
   Info,
   TriangleAlert,
+  Trash2,
 } from "lucide-vue-next";
 import { useAppearance } from "../composables/useAppearance";
 import { useChat } from "../composables/useChat";
@@ -90,6 +91,7 @@ const confirmation = ref<{
   alternate?: () => void;
   danger?: boolean;
   save?: boolean;
+  focusSelector?: string;
 } | null>(null);
 const confirmRunning = ref(false);
 watch(notice, (value, _, onCleanup) => {
@@ -267,6 +269,7 @@ function action(a: string, m: Message) {
       const index =
         a === "delete-candidate" ? m.selected : Number(a.split(":")[1]);
       confirmation.value = {
+        focusSelector: `[data-candidate-delete="${m.id}"]`,
         title:
           s.messages.at(-1)!.candidates.length === 1
             ? "删除最后一个候选？"
@@ -656,6 +659,7 @@ function completeElsewhere() {
     <Modal
       :open="!!confirmation"
       :title="confirmation?.title || '确认操作'"
+      :return-focus-selector="confirmation?.focusSelector"
       :description="confirmation?.detail"
       @update:open="
         (value) => {
@@ -681,7 +685,7 @@ function completeElsewhere() {
           :variant="confirmation?.danger ? 'destructive' : 'default'"
           :disabled="confirmRunning || !!(confirmation?.save && locked)"
           @click="confirm"
-          >{{ confirmRunning ? "处理中…" : confirmation?.label }}</Button
+          ><Trash2 v-if="confirmation?.danger" />{{ confirmRunning ? "处理中…" : confirmation?.label }}</Button
         >
       </div>
       <p v-if="confirmation?.save && locked" class="muted">

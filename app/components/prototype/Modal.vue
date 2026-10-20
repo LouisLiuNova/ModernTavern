@@ -12,13 +12,16 @@ const props = defineProps<{
   description?: string;
   wide?: boolean;
   full?: boolean;
+  returnFocusSelector?: string;
 }>();
 const emit = defineEmits<{ "update:open": [value: boolean] }>();
 let returnFocus: HTMLElement | null = null;
 watch(
   () => props.open,
   (open) => {
-    if (open) returnFocus = document.activeElement as HTMLElement;
+    if (open) returnFocus = (props.returnFocusSelector
+      ? document.querySelector<HTMLElement>(props.returnFocusSelector)
+      : null) || document.activeElement as HTMLElement;
   },
 );
 function restore(e: Event) {

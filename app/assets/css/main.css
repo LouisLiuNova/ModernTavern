@@ -242,8 +242,8 @@ textarea::placeholder {
   margin-bottom: 20px;
   padding: 24px 26px 13px;
   border-radius: 14px;
-  background: color-mix(in srgb, var(--card) 55%, var(--background));
-  border: 1px solid color-mix(in srgb, var(--border) 9%, transparent);
+  background: color-mix(in srgb, var(--card) 30%, var(--background));
+  border: 1px solid color-mix(in srgb, var(--border) 5%, transparent);
 }
 .message.user {
   background: color-mix(in srgb, var(--user-surface) 55%, var(--background));
@@ -1582,4 +1582,14 @@ button.candidate-count {
 .model-option span { overflow-wrap: anywhere; min-width: 0; }
 @media (max-width: 640px) {
   .model-picker [data-slot="button"] { min-width: 44px; min-height: 44px; }
+}
+
+/* 功能信息保持可读；正文表面降低层级，沿用现有语义色和动效。 */
+.message-tools { color: var(--foreground); gap: 10px; }
+.candidate-count { font-size: 14px; }
+.generation-state { font-size: 13px; line-height: 1.6; gap: 6px; }
+.continue-help { font-size: 13px; line-height: 1.6; }
+.composer-bottom { font-size: 13px; }
+@media (max-width: 640px) {
+  .composer-bottom [data-slot="button"] { font-size: 13px; }
 }

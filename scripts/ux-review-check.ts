@@ -80,20 +80,50 @@ await check("UX-01/02/05：选择不生成、草稿保留、失败重试新增�
   await expect(input).toHaveValue("保留在输入区的草稿");
   await expect(p.getByRole("button", { name: "选择候选", exact: true })).toBeDisabled();
   await expect(p.getByRole("button", { name: "重试生成", exact: true })).toBeVisible({ timeout: 15000 });
+  await expect(p.getByRole("button", { name: "重新生成", exact: true })).toHaveCount(0);
+  await expect(p.getByLabel("上一个候选", { exact: true })).toBeDisabled();
+  await expect(p.getByLabel("下一个候选", { exact: true })).toBeDisabled();
+  await expect(p.locator("#continue-help")).toContainText("已保留部分内容");
   const partial = await p.locator(".message").last().locator(".prose-story").innerText();
   await scenario(p, "emptyfail");
   await p.getByRole("button", { name: "重试生成", exact: true }).click();
   await expect(p.locator(".candidate-count")).toHaveText("2 / 2");
   await expect(p.getByRole("button", { name: "重试生成", exact: true })).toBeVisible();
+  await expect(p.locator("#continue-help")).toContainText("当前回复为空，可重试或切换到已有回复");
+  await expect(p.getByLabel("上一个候选", { exact: true })).toBeEnabled();
   await p.getByRole("button", { name: "选择候选", exact: true }).click();
   await p.getByRole("menuitem").filter({ hasText: "候选 1" }).click();
   await expect(p.locator(".message").last().locator(".prose-story")).toHaveText(partial);
   await expect(input).toHaveValue("保留在输入区的草稿");
+  await expect(p.locator("#continue-help")).toContainText("已保留部分内容");
   await p.screenshot({ path: `${artifacts}/ux-failure-recovery.png` });
   await p.getByLabel("外观设置", { exact: true }).click();
   await p.getByRole("button", { name: "暗色", exact: true }).click();
   await closeModal(p);
   await p.screenshot({ path: `${artifacts}/ux-failure-recovery-dark.png` });
+  await context.close();
+});
+await check("R-02/05：首字前停止、刷新中断与最后候选删除取消", async () => {
+  const { page: p, context } = await fresh();
+  await scenario(p, "slow");
+  await p.getByRole("button", { name: "沿此回复续写", exact: true }).click();
+  await p.getByLabel("停止生成", { exact: true }).click();
+  await expect(p.getByRole("button", { name: "重试生成", exact: true })).toBeVisible();
+  await expect(p.locator("#continue-help")).toContainText("当前回复为空，可重试生成");
+  await expect(p.locator("#continue-help")).not.toContainText("切换");
+  const before = await p.evaluate(() => localStorage.getItem("moderntavern.chat.v1"));
+  await p.getByLabel("删除候选", { exact: true }).click();
+  await p.getByRole("menuitem", { name: "删除候选 1 · 当前", exact: true }).click();
+  await expect(p.getByRole("button", { name: "删除候选及回复", exact: true })).toBeVisible();
+  await p.getByRole("button", { name: "取消", exact: true }).click();
+  expect(await p.evaluate(() => localStorage.getItem("moderntavern.chat.v1"))).toBe(before);
+  await expect(p.getByLabel("删除候选", { exact: true })).toBeFocused();
+  await p.getByRole("button", { name: "重试生成", exact: true }).click();
+  await expect(p.getByLabel("停止生成", { exact: true })).toBeVisible();
+  await p.reload();
+  await expect(p.locator(".message").last()).toContainText("已中断");
+  await expect(p.getByRole("button", { name: "重新生成", exact: true })).toHaveCount(0);
+  await expect(p.getByRole("button", { name: "重试生成", exact: true })).toBeVisible();
   await context.close();
 });
 await check("UX-03/04：错误图标、顶部通知与全屏停止不重叠", async () => {
@@ -218,6 +248,12 @@ await check("UX-12/13/14：十二色板×三尺寸×两布局实际表面与叠�
         const x = luminance(bg!), y = luminance(fg);
         expect((Math.max(x, y) + .05) / (Math.min(x, y) + .05)).toBeGreaterThanOrEqual(4.5);
       }
+      await p.getByLabel("删除候选", { exact: true }).click();
+      await p.getByRole("menuitem", { name: "删除候选 1 · 当前", exact: true }).click();
+      await expect(p.getByRole("dialog")).toContainText("删除当前候选后会循环选择下一个候选");
+      await expect(p.getByRole("button", { name: "确认删除候选", exact: true }).locator("svg")).toBeVisible();
+      await p.keyboard.press("Escape");
+      await expect(p.getByLabel("删除候选", { exact: true })).toBeFocused();
       expect(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       if (theme.id === "seiji") await p.screenshot({ path: `${artifacts}/ux-${mode}-${layout}-${width}.png` });
     }

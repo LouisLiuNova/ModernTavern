@@ -225,7 +225,7 @@ async function copy() {
           :disabled="locked"
           @click="emit('action', 'regenerate', message)"
           ><RefreshCw /><span class="regenerate-label">重新生成</span></Button
-        ><DropdownMenu><DropdownMenuTrigger as-child><Button variant="ghost" size="sm" aria-label="删除候选" title="删除候选" :disabled="locked"><Trash2 /><span>删除候选</span></Button></DropdownMenuTrigger><DropdownMenuContent class="menu" align="end"><DropdownMenuItem v-for="(option, ci) in message.candidates" :key="option.id" class="danger-text" @select="emit('action', `delete-candidate:${ci}`, message)"><Trash2 />删除候选 {{ ci + 1 }} · {{ ci === message.selected ? "当前" : "未选中" }}</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
+        ><DropdownMenu><DropdownMenuTrigger as-child><Button variant="ghost" size="sm" :data-candidate-delete="message.id" aria-label="删除候选" title="删除候选" :disabled="locked"><Trash2 /><span>删除候选</span></Button></DropdownMenuTrigger><DropdownMenuContent class="menu" align="end"><DropdownMenuItem v-for="(option, ci) in message.candidates" :key="option.id" class="danger-text" @select="emit('action', `delete-candidate:${ci}`, message)"><Trash2 />删除候选 {{ ci + 1 }} · {{ ci === message.selected ? "当前" : "未选中" }}</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
       </div>
     </footer>
   </article>
