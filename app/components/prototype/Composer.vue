@@ -17,6 +17,8 @@ const props = defineProps<{
   hasMessages: boolean;
   lastRole?: string;
   incomplete?: boolean;
+  emptyReply?: boolean;
+  hasAlternatives?: boolean;
 }>();
 const emit = defineEmits<{
   "update:modelValue": [text: string];
@@ -112,8 +114,10 @@ function update(e: Event) {
       </div>
     </div>
     <p v-if="hasMessages" id="continue-help" class="muted continue-help">
-      <template v-if="incomplete">当前回复未完成；继续会沿所选内容新增叙事。如需重试，请使用消息旁的“重试生成”。</template>
-      {{ lastRole === "assistant" ? "新增一段叙事" : "为已发送的消息生成回复" }}，无需发送草稿{{ modelValue.trim() ? "，当前草稿会保留" : "" }}。
+      <template v-if="lastRole === 'assistant' && emptyReply">当前回复为空，可重试{{ hasAlternatives ? "或切换到已有回复" : "生成" }}。</template>
+      <template v-else-if="incomplete">已保留部分内容；续写会沿所选回复新增一条回复。</template>
+      <template v-else>{{ lastRole === "assistant" ? "沿所选回复新增一条回复" : "为已发送的消息生成回复" }}。</template>
+      无需发送草稿，当前草稿会保留。
     </p>
     <div class="composer-bottom">
       <span>{{
@@ -126,7 +130,7 @@ function update(e: Event) {
         :disabled="locked || accepting"
         aria-describedby="continue-help"
         @click="emit('generate')"
-        >{{ lastRole === "assistant" ? "让叙事者继续" : "生成回复" }}
+        >{{ lastRole === "assistant" ? "沿此回复续写" : "生成回复" }}
         <Sparkles :size="14"
       /></Button>
     </div>

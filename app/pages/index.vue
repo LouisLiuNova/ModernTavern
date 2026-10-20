@@ -73,6 +73,15 @@ const locked = computed(
   () =>
     !!current.value && (busy(current.value) || accepting.has(current.value.id)),
 );
+const continuation = computed(() => {
+  const last = current.value?.messages.at(-1);
+  const selected = last && candidate(last);
+  return {
+    empty: !!selected && !selected.text.trim(),
+    incomplete: !!selected && ["failed", "interrupted", "stopped"].includes(selected.status),
+    alternatives: !!last && last.candidates.length > 1,
+  };
+});
 const confirmation = ref<{
   title: string;
   detail: string;
@@ -562,7 +571,9 @@ function completeElsewhere() {
         :accepting="accepting.has(current.id)"
         :has-messages="!!current.messages.length"
         :last-role="current.messages.at(-1)?.role"
-        :incomplete="['failed', 'interrupted', 'stopped'].includes((current.messages.length ? candidate(current.messages.at(-1)!)?.status : '') || '')"
+        :incomplete="continuation.incomplete"
+        :empty-reply="continuation.empty"
+        :has-alternatives="continuation.alternatives"
         @update:model-value="current.draft = $event"
         @send="sendMessage"
         @generate="continueStory"

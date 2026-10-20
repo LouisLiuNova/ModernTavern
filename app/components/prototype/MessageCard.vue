@@ -53,6 +53,7 @@ watch(() => props.editing, async (editing, wasEditing) => {
 const rendered = computed(() => md.render(content(props.message)));
 const c = computed(() => candidate(props.message)),
   copied = ref(false);
+const retryable = computed(() => !!c.value && ["failed", "interrupted", "stopped"].includes(c.value.status));
 const labels: Record<string, string> = {
   waiting: "等待回复",
   streaming: "正在生成",
@@ -140,7 +141,7 @@ async function copy() {
         v-else
         :size="13"
       /><span>{{ labels[c.status] }}</span><span v-if="c.error"> · {{ c.error }}</span>
-      <template v-if="last && ['failed', 'interrupted', 'stopped'].includes(c.status)">
+      <template v-if="last && retryable">
         <span>重试会生成新候选，保留当前{{ content(message) ? "部分回复" : "空候选" }}。</span>
         <Button v-if="!editing" variant="outline" size="sm" :disabled="locked" @click="emit('action', 'regenerate', message)"><RefreshCw />重试生成</Button>
       </template>
@@ -217,6 +218,7 @@ async function copy() {
           @click="emit('action', 'next', message)"
           ><ChevronRight /></Button
         ><span class="tool-divider" /><Button
+          v-if="!retryable"
           variant="ghost"
           size="sm"
           :disabled="locked"
