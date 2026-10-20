@@ -112,12 +112,12 @@ await check("R-02/05：首字前停止、刷新中断与最后候选删除取消
   await expect(p.locator("#continue-help")).toContainText("当前回复为空，可重试生成");
   await expect(p.locator("#continue-help")).not.toContainText("切换");
   const before = await p.evaluate(() => localStorage.getItem("moderntavern.chat.v1"));
-  await p.getByLabel("删除候选", { exact: true }).click();
+  await p.getByRole("button", { name: "删除候选", exact: true }).click();
   await p.getByRole("menuitem", { name: "删除候选 1 · 当前", exact: true }).click();
   await expect(p.getByRole("button", { name: "删除候选及回复", exact: true })).toBeVisible();
   await p.getByRole("button", { name: "取消", exact: true }).click();
   expect(await p.evaluate(() => localStorage.getItem("moderntavern.chat.v1"))).toBe(before);
-  await expect(p.getByLabel("删除候选", { exact: true })).toBeFocused();
+  await expect(p.getByRole("button", { name: "删除候选", exact: true })).toBeFocused();
   await p.getByRole("button", { name: "重试生成", exact: true }).click();
   await expect(p.getByLabel("停止生成", { exact: true })).toBeVisible();
   await p.reload();
@@ -248,12 +248,12 @@ await check("UX-12/13/14：十二色板×三尺寸×两布局实际表面与叠�
         const x = luminance(bg!), y = luminance(fg);
         expect((Math.max(x, y) + .05) / (Math.min(x, y) + .05)).toBeGreaterThanOrEqual(4.5);
       }
-      await p.getByLabel("删除候选", { exact: true }).click();
+      await p.getByRole("button", { name: "删除候选", exact: true }).click();
       await p.getByRole("menuitem", { name: "删除候选 1 · 当前", exact: true }).click();
       await expect(p.getByRole("dialog")).toContainText("删除当前候选后会循环选择下一个候选");
       await expect(p.getByRole("button", { name: "确认删除候选", exact: true }).locator("svg")).toBeVisible();
       await p.keyboard.press("Escape");
-      await expect(p.getByLabel("删除候选", { exact: true })).toBeFocused();
+      await expect(p.getByRole("button", { name: "删除候选", exact: true })).toBeFocused();
       expect(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       if (theme.id === "seiji") await p.screenshot({ path: `${artifacts}/ux-${mode}-${layout}-${width}.png` });
     }
