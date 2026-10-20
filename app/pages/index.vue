@@ -13,6 +13,9 @@ import {
   Feather,
   Sparkles,
   Circle,
+  Check,
+  Info,
+  TriangleAlert,
 } from "lucide-vue-next";
 import { useAppearance } from "../composables/useAppearance";
 import { useChat } from "../composables/useChat";
@@ -82,7 +85,7 @@ function attempt(fn: () => void) {
   try {
     fn();
   } catch (e) {
-    tell((e as Error).message);
+    tell((e as Error).message, undefined, "error");
   }
 }
 function clearEdit() {
@@ -185,7 +188,7 @@ async function confirm() {
     await c.run();
     confirmation.value = null;
   } catch (e) {
-    tell((e as Error).message);
+    tell((e as Error).message, undefined, "error");
   } finally {
     confirmRunning.value = false;
   }
@@ -195,7 +198,7 @@ function action(a: string, m: Message) {
   if (!s) return;
   attempt(() => {
     if (a === "copy-failed") {
-      tell("复制失败，请检查浏览器剪贴板权限。");
+      tell("复制失败，请检查浏览器剪贴板权限。", undefined, "error");
       return;
     }
     if (a === "edit") {
@@ -355,7 +358,7 @@ function completeElsewhere() {
   ];
   s.unread = true;
   state.sessions.unshift(s);
-  tell(`${s.name}：回复已完成`, s.id);
+  tell(`${s.name}：回复已完成`, s.id, "success");
 }
 </script>
 <template>
@@ -532,8 +535,8 @@ function completeElsewhere() {
       </p>
     </div>
     <Transition name="toast"
-      ><aside v-if="notice" class="toast" role="status">
-        <span class="toast-icon"><CheckIcon /></span
+      ><aside v-if="notice" class="toast" :data-kind="notice.kind" :role="notice.kind === 'error' ? 'alert' : 'status'">
+        <span class="toast-icon"><component :is="{ success: Check, info: Info, warning: TriangleAlert, error: CircleAlert }[notice.kind]" /></span
         ><button
           v-if="notice.session"
           class="toast-link"
@@ -610,7 +613,7 @@ function completeElsewhere() {
           >模拟未选择连接</Button
         ><Button
           variant="outline"
-          @click="tell('模拟本地保存失败：本次仅展示错误，未破坏浏览器数据。')"
+          @click="tell('模拟本地保存失败：本次仅展示错误，未破坏浏览器数据。', undefined, 'error')"
           >预览存储失败反馈</Button
         ><Button variant="ghost" @click="askReset">恢复初始演示数据</Button>
       </div></Modal
@@ -652,6 +655,3 @@ function completeElsewhere() {
     >
   </div>
 </template>
-<script lang="ts">
-import { Check as CheckIcon } from "lucide-vue-next";
-</script>

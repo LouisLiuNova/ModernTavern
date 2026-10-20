@@ -1,3 +1,4 @@
+import type { NoticeKind } from "../domain/notice";
 import { useConnectionKeys } from "./useConnectionKeys";
 import { useAppearance } from "./useAppearance";
 import { reactive, computed, ref, watch, effectScope } from "vue";
@@ -16,7 +17,7 @@ import {
 } from "../domain/chat";
 const state = reactive<ChatState>(seed());
 const storageError = ref(""),
-  notice = ref<{ text: string; session?: string } | null>(null),
+  notice = ref<{ text: string; session?: string; kind: NoticeKind } | null>(null),
   disconnected = ref(false),
   truncated = ref(false);
 const scenario = ref("normal"),
@@ -57,8 +58,8 @@ export function useChat() {
   const sorted = computed(() =>
     [...state.sessions].sort((a, b) => b.updated - a.updated),
   );
-  function tell(text: string, session?: string) {
-    notice.value = { text, session };
+  function tell(text: string, session?: string, kind: NoticeKind = "info") {
+    notice.value = { text, session, kind };
   }
   function select(sid: string) {
     state.current = sid;
@@ -90,6 +91,7 @@ export function useChat() {
       tell(
         `${s.name}：${status === "complete" ? "回复已完成" : status === "stopped" ? "生成已停止" : "生成已中断"}`,
         s.id,
+        status === "complete" ? "success" : status === "stopped" ? "info" : "error",
       );
   }
   function run(s: Session, c: Candidate, mode: string) {
@@ -143,7 +145,7 @@ export function useChat() {
     try {
       if (!state.sessions.includes(s)) return;
       if (mode === "sendfail") {
-        tell("模拟发送未被接收，草稿已保留。");
+        tell("模拟发送未被接收，草稿已保留。", undefined, "error");
         return;
       }
       const newer = s.draft;
@@ -151,7 +153,7 @@ export function useChat() {
       if (newer !== text) s.draft = newer;
       run(s, c, mode);
     } catch (e) {
-      tell((e as Error).message);
+      tell((e as Error).message, undefined, "error");
     } finally {
       accepting.delete(s.id);
     }
@@ -166,7 +168,7 @@ export function useChat() {
     try {
       run(s, begin(s, regenerate), scenario.value);
     } catch (e) {
-      tell((e as Error).message);
+      tell((e as Error).message, undefined, "error");
     }
   }
   async function stop(s = current.value) {
@@ -197,7 +199,7 @@ export function useChat() {
     disconnected.value = false;
     truncated.value = false;
     storageError.value = "";
-    tell("已恢复初始演示数据。");
+    tell("已恢复初始演示数据。", undefined, "success");
   }
   return {
     state,

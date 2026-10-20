@@ -1549,3 +1549,8 @@ button.candidate-count {
 }
 
 .candidate-preview { display: block; max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted-foreground); }
+
+.toast[data-kind="success"] .toast-icon { color: var(--success); }
+.toast[data-kind="info"] .toast-icon { color: var(--info); }
+.toast[data-kind="warning"] .toast-icon { color: var(--warning); }
+.toast[data-kind="error"] .toast-icon { color: var(--destructive); }
