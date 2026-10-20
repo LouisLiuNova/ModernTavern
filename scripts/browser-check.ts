@@ -753,6 +753,53 @@ await check("会话搜索栏边框对齐与无外扩焦点框", async () => {
     await context.close();
   }
 });
+await check("所有文本输入统一使用边线焦点，无外扩色框", async () => {
+  const { page: p, context } = await fresh(549);
+  const verify = async (locator: ReturnType<Page["locator"]>) => {
+    await locator.focus();
+    await expect(locator).toBeFocused();
+    await expect
+      .poll(() => locator.evaluate((el) => getComputedStyle(el).boxShadow))
+      .toBe("none");
+    expect(
+      await locator.evaluate((el) => getComputedStyle(el).outlineStyle),
+    ).toBe("none");
+  };
+  await verify(p.getByLabel("消息输入", { exact: true }));
+  expect(
+    await p
+      .locator(".composer")
+      .evaluate((el) => getComputedStyle(el).boxShadow),
+  ).not.toContain("0px 0px 0px 2px");
+  await p.getByRole("button", { name: "全屏写作", exact: true }).click();
+  await verify(p.getByLabel("全屏写作正文", { exact: true }));
+  await p.getByRole("button", { name: "收起写作", exact: true }).click();
+  await p
+    .getByRole("button", { name: "第 1 条消息更多操作", exact: true })
+    .click();
+  await p.getByRole("menuitem", { name: "编辑消息", exact: true }).click();
+  await verify(p.getByLabel("编辑消息正文"));
+  await p.getByRole("button", { name: "取消编辑", exact: true }).click();
+  await p.locator(".connection-trigger").click();
+  await p.getByRole("button", { name: "添加演示连接", exact: true }).click();
+  for (const id of [
+    "connection-name",
+    "connection-url",
+    "api-key",
+    "model-id",
+  ]) {
+    await verify(p.locator(`#${id}`));
+  }
+  await p.getByText("原型演示响应", { exact: true }).click();
+  await verify(p.getByLabel("GET /models 模拟结果", { exact: true }));
+  await p.screenshot({ path: `${artifacts}/connection-input-focus.png` });
+  await closeModal(p);
+  await p.goto(`${base}/themes`);
+  for (const preview of await p.getByLabel("预览输入框").all())
+    await verify(preview);
+  expect(errors).toEqual([]);
+  await context.close();
+});
 await check("运行期间无页面异常与外部模型请求", async () => {
   expect(errors).toEqual([]);
   expect(external).toEqual([]);
