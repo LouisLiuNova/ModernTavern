@@ -1,0 +1,13 @@
+{
+  "browser": "Google Chrome",
+  "version": "155.0.8059.85",
+  "base": "http://127.0.0.1:3100",
+  "results": [
+    {
+      "name": "UX-12/13/14：十二色板×三尺寸×两布局实际表面与叠层",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "external": []
+}
