@@ -215,7 +215,7 @@ await check(
     await p.getByRole("button", { name: "下一个候选", exact: true }).click();
     await expect(p.locator(".candidate-count").last()).toHaveText("1 / 2");
     const count = await p.locator(".message").count();
-    await p.getByRole("button", { name: "继续故事", exact: true }).click();
+    await p.getByRole("button", { name: "让叙事者继续", exact: true }).click();
     await expect(p.locator(".message")).toHaveCount(count + 1);
     await p.getByRole("button", { name: "停止生成", exact: true }).click();
     await context.close();
@@ -498,7 +498,7 @@ await check("刷新中断恢复、上滑不跟随与断线保留", async () => {
   // interrupted merely because the browser reloads later.
   await p.clock.install({ time: new Date("2026-10-20T07:00:00Z") });
   await p.clock.pauseAt(new Date("2026-10-20T07:00:01Z"));
-  await p.getByRole("button", { name: "继续故事", exact: true }).click();
+  await p.getByRole("button", { name: "让叙事者继续", exact: true }).click();
   await p.clock.runFor(1200);
   await expect(
     p.locator(".message").last().locator(".prose-story"),
@@ -582,9 +582,9 @@ await check("主题预览路由往返后，主题响应和数据保存仍有效"
 await check("多会话并行、停止后不再追加文字", async () => {
   const { page: p, context } = await fresh();
   await scenario(p, "slow");
-  await p.getByRole("button", { name: "继续故事", exact: true }).click();
+  await p.getByRole("button", { name: "让叙事者继续", exact: true }).click();
   await selectSession(p, "山间来信");
-  await p.getByRole("button", { name: "继续故事", exact: true }).click();
+  await p.getByRole("button", { name: "让叙事者继续", exact: true }).click();
   await p.getByRole("button", { name: "打开会话列表", exact: true }).click();
   await expect(
     p.locator(".session-meta").filter({ hasText: "正在生成" }),

@@ -6,6 +6,7 @@ import {
   Square,
   Feather,
   LoaderCircle,
+  Sparkles,
 } from "lucide-vue-next";
 import { Button } from "../ui/button";
 import Modal from "./Modal.vue";
@@ -103,6 +104,9 @@ function update(e: Event) {
         /></Button>
       </div>
     </div>
+    <p v-if="hasMessages" id="continue-help" class="muted continue-help">
+      {{ lastRole === "assistant" ? "新增一段叙事" : "为已发送的消息生成回复" }}，无需发送草稿{{ modelValue.trim() ? "，当前草稿会保留" : "" }}。
+    </p>
     <div class="composer-bottom">
       <span>{{
         mobile ? "回车换行，点击发送" : "Enter 发送 · Shift + Enter 换行"
@@ -112,9 +116,10 @@ function update(e: Event) {
         variant="ghost"
         size="sm"
         :disabled="locked || accepting"
+        aria-describedby="continue-help"
         @click="emit('generate')"
-        >{{ lastRole === "assistant" ? "继续故事" : "生成回复" }}
-        <ArrowUp :size="12"
+        >{{ lastRole === "assistant" ? "让叙事者继续" : "生成回复" }}
+        <Sparkles :size="14"
       /></Button>
     </div>
   </div>
