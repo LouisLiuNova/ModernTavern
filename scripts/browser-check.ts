@@ -44,11 +44,13 @@ async function check(name: string, fn: () => Promise<void>) {
   }
 }
 async function closeModal(p: Page) {
+  const count = await p.getByRole("dialog").count();
   await p
     .getByRole("dialog")
     .last()
     .getByRole("button", { name: "关闭", exact: true })
     .click();
+  await expect(p.getByRole("dialog")).toHaveCount(count - 1);
 }
 async function scenario(p: Page, value: string) {
   await p.getByRole("button", { name: "演示场景", exact: true }).click();
@@ -229,7 +231,7 @@ await check(
     await p.getByLabel("消息输入", { exact: true }).fill("不能丢失的草稿");
     await p.getByRole("button", { name: "发送消息", exact: true }).click();
     await expect(
-      p.getByRole("status").filter({ hasText: "模拟发送未被接收" }),
+      p.getByRole("alert").filter({ hasText: "模拟发送未被接收" }),
     ).toBeVisible();
     await expect(p.getByLabel("消息输入", { exact: true })).toHaveValue(
       "不能丢失的草稿",
@@ -293,7 +295,8 @@ await check("编辑跳转三选项、取消确认、分支隔离和候选删除"
   await expect(p.locator(".message").last().locator(".prose-story")).toHaveText(
     chosen,
   );
-  await p.getByRole("button", { name: "删除当前候选", exact: true }).click();
+  await p.getByRole("button", { name: "管理候选", exact: true }).click();
+  await p.getByRole("menuitem", { name: "删除候选 1 · 当前", exact: true }).click();
   await expect(p.getByRole("dialog")).toContainText("同时移除该 AI 消息");
   await p.getByRole("button", { name: "确认删除候选", exact: true }).click();
   await expect(p.locator(".message")).toHaveCount(3);
