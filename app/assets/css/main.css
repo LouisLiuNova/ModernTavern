@@ -1131,7 +1131,7 @@ textarea::placeholder {
   background: var(--popover);
   font-size: 12px;
   line-height: 1.7;
-  z-index: 100;
+  z-index: 10;
 }
 .toast-icon {
   display: flex;
@@ -1563,3 +1563,9 @@ button.candidate-count {
 @media (max-width: 640px) { .message-tools > .row { flex-wrap: wrap; } .candidate-controls { flex-wrap: wrap; } .composer-bottom { flex-wrap: wrap; gap: 4px; } .composer-bottom [data-slot="button"] { min-height: 44px; font-size: 12px; } }
 
 .dark [data-slot="dialog-overlay"] { background: rgb(0 0 0 / 52%); }
+
+@media (max-width: 400px) {
+  .brand-mark { display: none; }
+  .brand { font-size: 14px; }
+  .header-divider { display: none; }
+}
