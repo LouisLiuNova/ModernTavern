@@ -719,6 +719,37 @@ await check("回到底部平滑滚动、主动中断与减少动态效果", asyn
   ).toBeLessThan(2);
   await context.close();
 });
+await check("会话搜索栏边框对齐与单层焦点提示", async () => {
+  for (const width of [360, 549, 1440]) {
+    const { page: p, context } = await fresh(width);
+    await p.getByRole("button", { name: "打开会话列表", exact: true }).click();
+    const input = p.getByRole("textbox", { name: "搜索会话", exact: true });
+    const button = p.getByRole("button", { name: "新会话", exact: true });
+    await input.focus();
+    const a = await input.boundingBox(),
+      b = await button.boundingBox();
+    expect(a).not.toBeNull();
+    expect(b).not.toBeNull();
+    expect(Math.abs(a!.y - b!.y)).toBeLessThan(1);
+    expect(Math.abs(a!.height - b!.height)).toBeLessThan(1);
+    expect(
+      await input.evaluate((el) => getComputedStyle(el).outlineStyle),
+    ).toBe("none");
+    expect(
+      await input.evaluate((el) => getComputedStyle(el).boxShadow),
+    ).not.toBe("none");
+    await p.keyboard.press("Tab");
+    await expect(button).toBeFocused();
+    expect(
+      await button.evaluate((el) => getComputedStyle(el).outlineStyle),
+    ).toBe("none");
+    expect(
+      await button.evaluate((el) => getComputedStyle(el).boxShadow),
+    ).not.toBe("none");
+    await p.screenshot({ path: `${artifacts}/session-toolbar-${width}.png` });
+    await context.close();
+  }
+});
 await check("运行期间无页面异常与外部模型请求", async () => {
   expect(errors).toEqual([]);
   expect(external).toEqual([]);

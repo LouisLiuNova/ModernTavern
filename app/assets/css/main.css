@@ -812,6 +812,10 @@ textarea::placeholder {
 .settings-footer [data-slot="button"] {
   font-size: 11px;
 }
+.session-toolbar :is([data-slot="input"], [data-slot="button"]):focus-visible {
+  /* Existing shadcn focus rings already identify the active control. */
+  outline: none;
+}
 .search-box {
   display: flex;
   align-items: center;

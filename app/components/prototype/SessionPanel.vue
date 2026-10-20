@@ -37,7 +37,7 @@ function rename(s: Session) {
 }
 </script>
 <template>
-  <div class="row">
+  <div class="row session-toolbar">
     <div class="search-box">
       <Search :size="17" /><Input
         v-model="query"
