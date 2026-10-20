@@ -129,7 +129,7 @@ await check("UX-03/04：错误图标、顶部通知与全屏停止不重叠", as
 });
 await check("UX-06/07/09/10/11：导航焦点、纯文本片段、搜索与外观隔离", async () => {
   const { page: p, context } = await fresh(390);
-  const list = p.getByRole("button", { name: "故事列表", exact: true });
+  const list = p.getByRole("button", { name: "打开会话列表", exact: true });
   await list.click();
   await expect(p.locator(".session-preview").first()).not.toContainText("*");
   await p.getByLabel("搜索会话", { exact: true }).fill("没有这个名字");

@@ -204,6 +204,7 @@ textarea::placeholder {
   gap: 10px;
 }
 .story-title {
+  min-height: 44px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -1555,8 +1556,7 @@ button.candidate-count {
 .toast[data-kind="warning"] .toast-icon { color: var(--warning); }
 .toast[data-kind="error"] .toast-icon { color: var(--destructive); }
 
-.story-list-link { display: inline-flex; align-items: center; gap: 5px; min-height: 36px; font-size: 13px; color: var(--foreground); text-decoration: underline; text-underline-offset: 4px; }
-@media (max-width: 640px) { .story-list-link { min-height: 44px; } .story-subtitle-right { display: none; } }
+@media (max-width: 640px) { .story-subtitle-right { display: none; } }
 
 .message-tools [data-slot="button"] { padding-inline: 8px; }
 .continue-help { margin: 7px; font-size: 12px; }

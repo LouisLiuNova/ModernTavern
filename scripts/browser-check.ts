@@ -814,7 +814,7 @@ await check("UX-08：统一默认名称，同名会话草稿与恢复保持独�
   await p.reload();
   await expect(p.locator("h1")).toHaveText("新会话");
   await expect(p.getByLabel("消息输入", { exact: true })).toHaveValue("第二段独立草稿");
-  await p.getByRole("button", { name: "故事列表", exact: true }).click();
+  await p.getByRole("button", { name: "打开会话列表", exact: true }).click();
   const matches = p.locator(".session-main").filter({ has: p.getByText("新会话", { exact: true }) });
   await expect(matches).toHaveCount(2);
   await matches.filter({ hasText: "尚未开始" }).nth(1).click();
@@ -823,6 +823,35 @@ await check("UX-08：统一默认名称，同名会话草稿与恢复保持独�
   expect(errors).toEqual([]);
   expect(external).toEqual([]);
   await context.close();
+});
+await check("会话列表唯一入口：标题下拉、键盘开启与焦点返回", async () => {
+  for (const width of [1440, 390, 360]) {
+    const { page: p, context } = await fresh(width);
+    await expect(p.getByRole("button", { name: "打开会话列表", exact: true })).toHaveCount(1);
+    const trigger = p.locator(".story-title");
+    await expect(trigger).toHaveCount(1);
+    await expect(trigger).toHaveClass("story-title");
+    await expect(p.locator(".brand")).not.toHaveRole("button");
+    await expect(p.locator(".brand").getByRole("button")).toHaveCount(0);
+    await expect(p.getByRole("button", { name: "故事列表", exact: true })).toHaveCount(0);
+    await p.locator(".brand").click();
+    await expect(p.getByRole("dialog")).toHaveCount(0);
+    await trigger.focus();
+    await trigger.press("Enter");
+    await expect(p.getByRole("dialog")).toBeVisible();
+    await expect(trigger).toHaveAttribute("aria-expanded", "true");
+    await p.keyboard.press("Escape");
+    await expect(p.getByRole("dialog")).toHaveCount(0);
+    await expect(trigger).toBeFocused();
+    await expect(trigger).toHaveAttribute("aria-expanded", "false");
+    await p.getByLabel("新建会话", { exact: true }).click();
+    await expect(p.locator("h1")).toHaveText("新会话");
+    await p.screenshot({ path: `${artifacts}/session-title-${width}.png` });
+    expect(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await context.close();
+  }
+  expect(errors).toEqual([]);
+  expect(external).toEqual([]);
 });
 await check("运行期间无页面异常与外部模型请求", async () => {
   expect(errors).toEqual([]);

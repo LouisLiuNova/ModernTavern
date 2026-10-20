@@ -14,7 +14,6 @@ import {
   Sparkles,
   Circle,
   Database,
-  Library,
   Check,
   Info,
   TriangleAlert,
@@ -382,18 +381,14 @@ function completeElsewhere() {
 <template>
   <div class="app-shell">
     <header class="app-header">
-      <button
-        class="brand"
-        aria-label="打开会话列表"
-        @click="panel = 'sessions'"
-      >
+      <div class="brand">
         <span class="brand-mark"
           ><BookOpen :size="21" :stroke-width="1.5" /></span
         ><span
           >Modern<span class="brand-light">Tavern</span
           ><small>留白之间，故事发生</small></span
         >
-      </button>
+      </div>
       <div class="header-actions">
         <Button
           variant="outline"
@@ -480,8 +475,15 @@ function completeElsewhere() {
             <span class="tiny-rule" /> YOUR STORY, UNFOLDING
           </div>
           <div class="story-title-row">
-            <button class="story-title" @click="panel = 'sessions'">
-              <h1>{{ current?.name || "故事，从这里开始" }}</h1>
+            <button
+              class="story-title"
+              aria-label="打开会话列表"
+              aria-describedby="current-story-title"
+              aria-haspopup="dialog"
+              :aria-expanded="panel === 'sessions'"
+              @click="panel = 'sessions'"
+            >
+              <h1 id="current-story-title">{{ current?.name || "故事，从这里开始" }}</h1>
               <ChevronDown :size="18" /></button
             ><Button
               variant="ghost"
@@ -492,7 +494,7 @@ function completeElsewhere() {
             /></Button>
           </div>
           <div class="story-subtitle">
-            <button class="story-list-link" aria-label="故事列表" @click="panel = 'sessions'"><Library :size="16" />故事列表</button><span>·</span><span>{{
+            <BookOpen :size="13" /><span>{{
               appearance.layout === "reading" ? "阅读式" : "气泡式"
             }}</span
             ><span>·</span
