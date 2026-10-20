@@ -719,7 +719,7 @@ await check("回到底部平滑滚动、主动中断与减少动态效果", asyn
   ).toBeLessThan(2);
   await context.close();
 });
-await check("会话搜索栏边框对齐与单层焦点提示", async () => {
+await check("会话搜索栏边框对齐与无外扩焦点框", async () => {
   for (const width of [360, 549, 1440]) {
     const { page: p, context } = await fresh(width);
     await p.getByRole("button", { name: "打开会话列表", exact: true }).click();
@@ -735,9 +735,12 @@ await check("会话搜索栏边框对齐与单层焦点提示", async () => {
     expect(
       await input.evaluate((el) => getComputedStyle(el).outlineStyle),
     ).toBe("none");
-    expect(
-      await input.evaluate((el) => getComputedStyle(el).boxShadow),
-    ).not.toBe("none");
+    await expect
+      .poll(() => input.evaluate((el) => getComputedStyle(el).boxShadow))
+      .toBe("none");
+    await p.screenshot({
+      path: `${artifacts}/session-search-focused-${width}.png`,
+    });
     await p.keyboard.press("Tab");
     await expect(button).toBeFocused();
     expect(
