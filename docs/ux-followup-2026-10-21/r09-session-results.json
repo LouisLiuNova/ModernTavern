@@ -1,0 +1,13 @@
+{
+  "browser": "Google Chrome",
+  "version": "155.0.8059.85",
+  "base": "http://127.0.0.1:3100",
+  "results": [
+    {
+      "name": "会话创建搜索重命名、全屏写作、草稿刷新和布局切换",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "external": []
+}

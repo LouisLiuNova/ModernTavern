@@ -188,7 +188,7 @@ function createSession() {
 }
 function askDeleteSession(s: Session) {
   confirmation.value = {
-    title: "删除这段会话？",
+    title: "删除此会话？",
     detail: `“${s.name}”的消息、候选和本地草稿将被删除。${busy(s) ? "正在进行的生成会先停止。" : ""}已创建的独立分支会保留。`,
     label: "删除会话",
     danger: true,
@@ -591,7 +591,7 @@ function completeElsewhere() {
     </div>
     <Modal
       :open="panel === 'sessions'"
-      title="你的故事"
+      title="会话列表"
       description="每一种可能，都值得留下。"
       wide
       @update:open="panel = $event ? 'sessions' : null"

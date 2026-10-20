@@ -186,7 +186,7 @@ await check("会话创建搜索重命名、全屏写作、草稿刷新和布局�
   await p.getByRole("button", { name: "打开会话列表", exact: true }).click();
   const selected = p.locator(".session-card.selected");
   await selected.getByRole("button", { name: /管理会话/ }).click();
-  await p.getByRole("menuitem", { name: "重命名", exact: true }).click();
+  await p.getByRole("menuitem", { name: "重命名会话", exact: true }).click();
   await p.getByLabel("会话新名称").fill("我的原型故事");
   await p.getByRole("button", { name: "保存名称", exact: true }).click();
   await p.getByLabel("搜索会话").fill("我的原型");
@@ -736,7 +736,7 @@ await check("会话搜索栏边框对齐与无外扩焦点框", async () => {
     const { page: p, context } = await fresh(width);
     await p.getByRole("button", { name: "打开会话列表", exact: true }).click();
     const input = p.getByRole("textbox", { name: "搜索会话", exact: true });
-    const button = p.getByRole("button", { name: "新会话", exact: true });
+    const button = p.getByRole("button", { name: "新建会话", exact: true });
     await input.focus();
     const a = await input.boundingBox(),
       b = await button.boundingBox();
