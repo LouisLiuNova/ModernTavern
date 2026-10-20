@@ -38,6 +38,18 @@ const emit = defineEmits<{
   "update:editText": [text: string];
 }>();
 const md = new MarkdownIt({ html: false, linkify: false, breaks: true });
+const root = ref<HTMLElement>();
+watch(() => props.editing, async (editing, wasEditing) => {
+  await nextTick();
+  if (editing) {
+    const field = root.value?.querySelector<HTMLTextAreaElement>("textarea");
+    field?.focus({ preventScroll: true });
+    field?.setSelectionRange(field.value.length, field.value.length);
+    field?.scrollIntoView({ block: "nearest" });
+  } else if (wasEditing) {
+    root.value?.querySelector<HTMLButtonElement>("[data-edit-trigger]")?.focus({ preventScroll: true });
+  }
+}, { flush: "post" });
 const rendered = computed(() => md.render(content(props.message)));
 const c = computed(() => candidate(props.message)),
   copied = ref(false);
@@ -62,6 +74,7 @@ async function copy() {
 </script>
 <template>
   <article
+    ref="root"
     :id="`message-${message.id}`"
     class="message"
     :class="[message.role, { 'is-editing': editing }]"
@@ -84,6 +97,7 @@ async function copy() {
         :model-value="editText"
         class="edit-textarea"
         aria-label="编辑消息正文"
+        @keydown.esc.stop="emit('action', 'cancel-edit', message)"
         @update:model-value="emit('update:editText', String($event))"
       />
       <div class="row end">
@@ -145,8 +159,9 @@ async function copy() {
               variant="ghost"
               size="icon-sm"
               :aria-label="`第 ${index + 1} 条消息更多操作`"
+              data-edit-trigger
               ><MoreHorizontal /></Button></DropdownMenuTrigger
-          ><DropdownMenuContent align="start" class="menu"
+          ><DropdownMenuContent align="start" class="menu" @close-auto-focus="editing && $event.preventDefault()"
             ><DropdownMenuItem
               :disabled="locked"
               @select="emit('action', 'edit', message)"

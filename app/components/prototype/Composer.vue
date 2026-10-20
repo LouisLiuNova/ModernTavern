@@ -57,6 +57,12 @@ function resize() {
   });
 }
 watch(() => props.modelValue, resize);
+async function focus() {
+  await nextTick();
+  field.value?.focus();
+  field.value?.setSelectionRange(props.modelValue.length, props.modelValue.length);
+}
+defineExpose({ focus });
 function update(e: Event) {
   emit("update:modelValue", (e.target as HTMLTextAreaElement).value);
   resize();

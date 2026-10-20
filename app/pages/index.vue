@@ -65,6 +65,7 @@ const {
 const panel = ref<
   "sessions" | "connection" | "appearance" | "scenarios" | "data" | null
 >(null);
+const composer = ref<InstanceType<typeof Composer>>();
 const scroller = ref<HTMLElement>(),
   following = ref(true),
   editing = ref(""),
@@ -355,6 +356,16 @@ function continueStory() {
     jumpBottom();
   });
 }
+function fillExample() {
+  if (!current.value) return;
+  if (current.value.draft.trim()) {
+    tell("草稿中已有内容，已保留。请先整理草稿再使用示例。");
+    void composer.value?.focus();
+    return;
+  }
+  current.value.draft = "夜色渐深，我推开了山间旅店的门。请从店主的视角，慢慢讲述这个故事。";
+  void composer.value?.focus();
+}
 function completeElsewhere() {
   const s = newSession("一封刚刚抵达的信");
   s.messages = [
@@ -526,12 +537,9 @@ function completeElsewhere() {
           ><button
             v-else
             class="prompt-card"
-            @click="
-              current.draft =
-                '夜色渐深，我推开了山间旅店的门。请从店主的视角，慢慢讲述这个故事。'
-            "
+            @click="fillExample"
           >
-            “夜色渐深，我推开了山间旅店的门……”<Sparkles :size="16" />
+            <span>“夜色渐深，我推开了山间旅店的门……”<small class="candidate-preview">填入草稿，编辑后再发送</small></span><Sparkles :size="16" />
           </button>
         </div>
       </div>
@@ -545,6 +553,7 @@ function completeElsewhere() {
         @click="returnToBottom"
         ><ArrowDown />回到底部</Button
       ><Composer
+        ref="composer"
         v-if="current"
         :model-value="current.draft"
         :locked="busy(current)"
