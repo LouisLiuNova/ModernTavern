@@ -1,0 +1,13 @@
+{
+  "browser": "Google Chrome",
+  "version": "155.0.8059.85",
+  "base": "http://127.0.0.1:3111",
+  "results": [
+    {
+      "name": "UX-08：统一默认名称，同名会话草稿与恢复保持独立",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "external": []
+}

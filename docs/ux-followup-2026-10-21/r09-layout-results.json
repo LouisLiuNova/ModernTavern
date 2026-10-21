@@ -1,0 +1,13 @@
+{
+  "browser": "Google Chrome",
+  "version": "155.0.8059.85",
+  "base": "http://127.0.0.1:3100",
+  "results": [
+    {
+      "name": "会话搜索栏边框对齐与无外扩焦点框",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "external": []
+}

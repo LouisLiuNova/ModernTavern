@@ -1,0 +1,13 @@
+{
+  "browser": "Google Chrome",
+  "version": "155.0.8059.85",
+  "base": "http://127.0.0.1:3100",
+  "results": [
+    {
+      "name": "R-02/05：首字前停止、刷新中断与最后候选删除取消",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "external": []
+}

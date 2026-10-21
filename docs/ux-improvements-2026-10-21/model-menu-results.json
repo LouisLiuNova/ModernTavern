@@ -1,0 +1,13 @@
+{
+  "browser": "Google Chrome",
+  "version": "155.0.8059.85",
+  "base": "http://127.0.0.1:3111",
+  "results": [
+    {
+      "name": "模型选择下拉：显示全部模型、键盘选择与手填保存",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "external": []
+}

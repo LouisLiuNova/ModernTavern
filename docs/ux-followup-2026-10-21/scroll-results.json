@@ -1,0 +1,13 @@
+{
+  "browser": "Google Chrome",
+  "version": "155.0.8059.85",
+  "base": "http://127.0.0.1:3100",
+  "results": [
+    {
+      "name": "回到底部平滑滚动、主动中断与减少动态效果",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "external": []
+}

@@ -1,0 +1,13 @@
+{
+  "browser": "Google Chrome",
+  "version": "155.0.8059.85",
+  "base": "http://127.0.0.1:3111",
+  "results": [
+    {
+      "name": "API Key 可空且不持久化，模型刷新成功、失败重试与空列表",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "external": []
+}
