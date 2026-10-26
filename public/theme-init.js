@@ -1,0 +1,2 @@
+// This blocking, local script restores only this prototype's appearance preference.
+(()=>{let p={theme:'seiji',mode:'system'};try{const s=JSON.parse(localStorage.getItem('moderntavern.appearance.v1')||'null');if(s)p=s}catch{}const t=['kohbai','kikuchiba','matsuba','seiji','hanada','fuji'].includes(p.theme)?p.theme:'seiji';const dark=p.mode==='dark'||(p.mode!=='light'&&typeof matchMedia==='function'&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.dataset.theme=t;document.documentElement.classList.add(dark?'dark':'light')})();

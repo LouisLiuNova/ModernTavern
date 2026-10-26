@@ -1,0 +1,13 @@
+{
+  "browser": "Google Chrome",
+  "version": "155.0.8059.85",
+  "base": "http://127.0.0.1:3111",
+  "results": [
+    {
+      "name": "UX-06/07/09/10/11：导航焦点、纯文本片段、搜索与外观隔离",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "external": []
+}

@@ -1,0 +1,13 @@
+{
+  "browser": "Google Chrome",
+  "version": "155.0.8059.85",
+  "base": "http://127.0.0.1:3111",
+  "results": [
+    {
+      "name": "会话列表唯一入口：标题下拉、键盘开启与焦点返回",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "external": []
+}

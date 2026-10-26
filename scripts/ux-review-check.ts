@@ -1,0 +1,458 @@
+import { chromium, expect, type Page } from "@playwright/test";
+import { mkdir } from "node:fs/promises";
+import { themes } from "../app/domain/appearance";
+import { seed } from "../app/domain/chat";
+const base = process.env.MT_BASE_URL || "http://127.0.0.1:3101";
+const artifacts = process.env.MT_ARTIFACTS || "/tmp/moderntavern-browser-check";
+await mkdir(artifacts, { recursive: true });
+const browser = await chromium.launch({
+  executablePath: process.env.CHROME_BIN || "/opt/google/chrome/chrome",
+  headless: true,
+  args: ["--no-sandbox"],
+});
+const results: { name: string; passed: boolean; error?: string }[] = [];
+const errors: string[] = [],
+  external: string[] = [];
+async function fresh(width = 1440) {
+  const context = await browser.newContext({
+    viewport: { width, height: 1000 },
+    colorScheme: "light",
+    reducedMotion: "reduce",
+  });
+  const page = await context.newPage();
+  page.on("pageerror", (e) => errors.push(e.message));
+  page.on("request", (r) => {
+    if (!r.url().startsWith(base) && !r.url().startsWith("data:"))
+      external.push(r.url());
+  });
+  await page.goto(base);
+  await expect(page.locator("h1")).toContainText("雨落在旧书店");
+  return { page, context };
+}
+async function check(name: string, fn: () => Promise<void>) {
+  if (
+    process.env.MT_CHECK_FILTER &&
+    !name.includes(process.env.MT_CHECK_FILTER)
+  )
+    return;
+  try {
+    await fn();
+    results.push({ name, passed: true });
+    console.log(`PASS ${name}`);
+  } catch (e) {
+    results.push({ name, passed: false, error: String(e) });
+    console.log(`FAIL ${name}\n${e}`);
+  }
+}
+async function closeModal(p: Page) {
+  const count = await p.getByRole("dialog").count();
+  await p
+    .getByRole("dialog")
+    .last()
+    .getByRole("button", { name: "关闭", exact: true })
+    .click();
+  await expect(p.getByRole("dialog")).toHaveCount(count - 1);
+}
+async function scenario(p: Page, value: string) {
+  await p.getByRole("button", { name: "演示场景", exact: true }).click();
+  await p.getByLabel("下一次模拟生成").selectOption(value);
+  await closeModal(p);
+}
+async function selectSession(p: Page, name: string) {
+  await p.getByRole("button", { name: "打开会话列表", exact: true }).click();
+  await p
+    .locator(".session-main")
+    .filter({ has: p.getByText(name, { exact: true }) })
+    .click();
+}
+// 针对 2026-10-20 走查的行为回归；复用现有 Chrome 与独立上下文方式。
+await check("UX-01/02/05：选择不生成、草稿保留、失败重试新增候选", async () => {
+  const { page: p, context } = await fresh();
+  const input = p.getByLabel("消息输入", { exact: true });
+  await input.fill("保留在输入区的草稿");
+  await p.getByRole("button", { name: "选择候选", exact: true }).click();
+  await p.getByRole("menuitem").filter({ hasText: "候选 2" }).click();
+  await expect(p.locator(".candidate-count")).toHaveText("2 / 2");
+  await expect(p.locator(".message")).toHaveCount(4);
+  await expect(p.getByLabel("停止生成", { exact: true })).toHaveCount(0);
+  await scenario(p, "partialfail");
+  await p.getByRole("button", { name: "沿此回复续写", exact: true }).click();
+  await expect(p.locator(".message")).toHaveCount(5);
+  await expect(input).toHaveValue("保留在输入区的草稿");
+  await expect(p.getByRole("button", { name: "选择候选", exact: true })).toBeDisabled();
+  await expect(p.getByRole("button", { name: "重试生成", exact: true })).toBeVisible({ timeout: 15000 });
+  await expect(p.getByRole("button", { name: "重新生成", exact: true })).toHaveCount(0);
+  await expect(p.getByLabel("上一个候选", { exact: true })).toBeDisabled();
+  await expect(p.getByLabel("下一个候选", { exact: true })).toBeDisabled();
+  await expect(p.locator("#continue-help")).toContainText("已保留部分内容");
+  const partial = await p.locator(".message").last().locator(".prose-story").innerText();
+  await scenario(p, "emptyfail");
+  await p.getByRole("button", { name: "重试生成", exact: true }).click();
+  await expect(p.locator(".candidate-count")).toHaveText("2 / 2");
+  await expect(p.getByRole("button", { name: "重试生成", exact: true })).toBeVisible();
+  await expect(p.locator("#continue-help")).toContainText("当前回复为空，可重试或切换到已有回复");
+  await expect(p.getByLabel("上一个候选", { exact: true })).toBeEnabled();
+  await p.getByRole("button", { name: "选择候选", exact: true }).click();
+  await p.getByRole("menuitem").filter({ hasText: "候选 1" }).click();
+  await expect(p.locator(".message").last().locator(".prose-story")).toHaveText(partial);
+  await expect(input).toHaveValue("保留在输入区的草稿");
+  await expect(p.locator("#continue-help")).toContainText("已保留部分内容");
+  await p.screenshot({ path: `${artifacts}/ux-failure-recovery.png` });
+  await p.getByLabel("外观设置", { exact: true }).click();
+  await p.getByRole("button", { name: "暗色", exact: true }).click();
+  await closeModal(p);
+  await p.screenshot({ path: `${artifacts}/ux-failure-recovery-dark.png` });
+  await context.close();
+});
+await check("R-02/05：首字前停止、刷新中断与最后候选删除取消", async () => {
+  const { page: p, context } = await fresh();
+  await scenario(p, "slow");
+  await p.getByRole("button", { name: "沿此回复续写", exact: true }).click();
+  await p.getByLabel("停止生成", { exact: true }).click();
+  await expect(p.getByRole("button", { name: "重试生成", exact: true })).toBeVisible();
+  await expect(p.locator("#continue-help")).toContainText("当前回复为空，可重试生成");
+  await expect(p.locator("#continue-help")).not.toContainText("切换");
+  const before = await p.evaluate(() => localStorage.getItem("moderntavern.chat.v1"));
+  await p.getByRole("button", { name: "删除候选", exact: true }).click();
+  await p.getByRole("menuitem", { name: "删除候选 1 · 当前", exact: true }).click();
+  await expect(p.getByRole("button", { name: "删除候选及回复", exact: true })).toBeVisible();
+  await p.getByRole("button", { name: "取消", exact: true }).click();
+  expect(await p.evaluate(() => localStorage.getItem("moderntavern.chat.v1"))).toBe(before);
+  await expect(p.getByRole("button", { name: "删除候选", exact: true })).toBeFocused();
+  await p.getByRole("button", { name: "重试生成", exact: true }).click();
+  await expect(p.getByLabel("停止生成", { exact: true })).toBeVisible();
+  await p.reload();
+  await expect(p.locator(".message").last()).toContainText("已中断");
+  await expect(p.getByRole("button", { name: "重新生成", exact: true })).toHaveCount(0);
+  await expect(p.getByRole("button", { name: "重试生成", exact: true })).toBeVisible();
+  await context.close();
+});
+await check("UX-03/04：错误图标、顶部通知与全屏停止不重叠", async () => {
+  for (const width of [1440, 390, 360]) {
+    const { page: p, context } = await fresh(width);
+    await scenario(p, "slow");
+    await p.getByRole("button", { name: "沿此回复续写", exact: true }).click();
+    await p.getByRole("button", { name: "演示场景", exact: true }).click();
+    await p.getByRole("button", { name: "预览存储失败反馈", exact: true }).click();
+    await closeModal(p);
+    const toast = p.locator(".toast");
+    await expect(toast).toHaveAttribute("role", "alert");
+    await expect(toast).toHaveAttribute("data-kind", "error");
+    await expect(toast.locator(".lucide-circle-alert-icon")).toBeVisible();
+    const notice = await toast.boundingBox();
+    const stop = await p.getByLabel("停止生成", { exact: true }).boundingBox();
+    expect(notice!.y + notice!.height).toBeLessThan(stop!.y);
+    await p.getByRole("button", { name: "全屏写作", exact: true }).click();
+    await expect(p.getByLabel("全屏写作正文")).toBeFocused();
+    expect(await p.getByRole("dialog").evaluate(el => {
+      const r = el.getBoundingClientRect();
+      return el.contains(document.elementFromPoint(r.x + 40, r.y + 90));
+    })).toBe(true);
+    await p.getByRole("dialog").getByRole("button", { name: "停止生成", exact: true }).click();
+    await expect(p.getByRole("dialog").getByRole("button", { name: "停止生成", exact: true })).toHaveCount(0);
+    await p.screenshot({ path: `${artifacts}/ux-full-writing-${width}.png` });
+    await p.getByRole("button", { name: "收起写作", exact: true }).click();
+    await expect(toast).toBeVisible();
+    await expect(p.locator(".message").last()).toContainText("已停止");
+    await p.screenshot({ path: `${artifacts}/ux-notice-${width}.png` });
+    await context.close();
+  }
+});
+await check("UX-06/07/09/10/11：导航焦点、纯文本片段、搜索与外观隔离", async () => {
+  const { page: p, context } = await fresh(390);
+  const list = p.getByRole("button", { name: "打开会话列表", exact: true });
+  await list.click();
+  await expect(p.locator(".session-preview").first()).not.toContainText("*");
+  await p.getByLabel("搜索会话", { exact: true }).fill("没有这个名字");
+  await p.getByRole("button", { name: "清空搜索", exact: true }).click();
+  await expect(p.locator(".session-main")).toHaveCount(2);
+  await closeModal(p);
+  await expect(list).toBeFocused();
+  await p.getByLabel("新建会话", { exact: true }).click();
+  await p.locator(".prompt-card").click();
+  const input = p.getByLabel("消息输入", { exact: true });
+  await expect(input).toBeFocused();
+  const draft = await input.inputValue();
+  await input.fill("我自己的草稿");
+  await p.locator(".prompt-card").click();
+  await expect(input).toHaveValue("我自己的草稿");
+  const before = await p.evaluate(() => JSON.parse(localStorage.getItem("moderntavern.chat.v1")!));
+  await p.getByLabel("外观设置", { exact: true }).click();
+  await p.getByRole("button", { name: "气泡式", exact: true }).click();
+  await p.getByRole("button", { name: "恢复默认外观", exact: true }).click();
+  await closeModal(p);
+  const after = await p.evaluate(() => JSON.parse(localStorage.getItem("moderntavern.chat.v1")!));
+  expect(after).toEqual(before);
+  expect(draft).toContain("山间旅店");
+  await selectSession(p, "雨落在旧书店");
+  const trigger = p.getByLabel("编辑第 1 条消息", { exact: true });
+  await trigger.click();
+  await expect(p.getByLabel("编辑消息正文", { exact: true })).toBeFocused();
+  await p.getByLabel("编辑消息正文", { exact: true }).press("Escape");
+  await expect(trigger).toBeFocused();
+  await trigger.click();
+  await p.getByLabel("编辑消息正文", { exact: true }).fill("需要确认的编辑");
+  await p.getByRole("button", { name: "取消编辑", exact: true }).click();
+  await p.getByRole("button", { name: "放弃修改", exact: true }).click();
+  await expect(trigger).toBeFocused();
+  await context.close();
+});
+await check("UX-03：真实本地存储失败提示与复制错误分别保留", async () => {
+  const { page: p, context } = await fresh();
+  await p.evaluate(() => {
+    const original = Storage.prototype.setItem;
+    Storage.prototype.setItem = function(key, value) {
+      if (key === "moderntavern.chat.v1") throw new DOMException("测试存储配额", "QuotaExceededError");
+      original.call(this, key, value);
+    };
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async () => { throw new Error("测试拒绝剪贴板权限"); } } });
+  });
+  await p.getByLabel("消息输入", { exact: true }).fill("尚未保存的草稿");
+  await expect(p.locator(".storage-warning")).toContainText("刷新可能丢失本次修改");
+  await expect(p.getByLabel("消息输入", { exact: true })).toHaveValue("尚未保存的草稿");
+  await p.getByLabel("复制第 1 条消息", { exact: true }).click();
+  await expect(p.locator(".toast")).toHaveAttribute("data-kind", "error");
+  await expect(p.locator(".toast")).toContainText("复制失败");
+  await expect(p.locator(".storage-warning")).toBeVisible();
+  await context.close();
+});
+await check("UX-12/13/14：十二色板×三尺寸×两布局实际表面与叠层", async () => {
+  function luminance(rgb: number[]) {
+    const [r, g, b] = rgb.map(x => { const v = x / 255; return v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; });
+    return r! * .2126 + g! * .7152 + b! * .0722;
+  }
+  for (const width of [1440, 390, 360]) {
+    const { page: p, context } = await fresh(width);
+    await p.emulateMedia({ reducedMotion: "no-preference" });
+    const brand = await p.locator(".brand").boundingBox();
+    const actions = await p.locator(".header-actions").boundingBox();
+    expect(brand!.x + brand!.width).toBeLessThanOrEqual(actions!.x);
+    for (const theme of themes) for (const mode of ["light", "dark"]) for (const layout of ["reading", "bubble"]) {
+      await p.getByLabel("外观设置", { exact: true }).click();
+      await p.getByRole("button", { name: `主题 ${theme.name}`, exact: true }).click();
+      await p.getByRole("button", { name: mode === "light" ? "亮色" : "暗色", exact: true }).click();
+      await p.getByRole("button", { name: layout === "reading" ? "阅读式" : "气泡式", exact: true }).click();
+      await expect(p.getByRole("dialog")).toBeVisible();
+      await closeModal(p);
+      const samples = await p.evaluate(() => {
+        // Canvas 将浏览器计算得到的 color-mix 色值解析为实际 sRGB。
+        const ctx = document.createElement("canvas").getContext("2d")!;
+        const rgb = (value: string) => { ctx.clearRect(0, 0, 1, 1); ctx.fillStyle = value; ctx.fillRect(0, 0, 1, 1); return Array.from(ctx.getImageData(0, 0, 1, 1).data).slice(0, 3); };
+        return [...document.querySelectorAll(".message")].map(el => {
+          const style = getComputedStyle(el);
+          return [rgb(style.backgroundColor), rgb(style.color), rgb(style.getPropertyValue("--muted-foreground"))];
+        });
+      });
+      for (const [bg, ...fgs] of samples) for (const fg of fgs) {
+        const x = luminance(bg!), y = luminance(fg);
+        expect((Math.max(x, y) + .05) / (Math.min(x, y) + .05)).toBeGreaterThanOrEqual(4.5);
+      }
+      await p.getByRole("button", { name: "删除候选", exact: true }).click();
+      await p.getByRole("menuitem", { name: "删除候选 1 · 当前", exact: true }).click();
+      await expect(p.getByRole("dialog")).toContainText("删除当前候选后会循环选择下一个候选");
+      await expect(p.getByRole("button", { name: "确认删除候选", exact: true }).locator("svg")).toBeVisible();
+      await p.keyboard.press("Escape");
+      await expect(p.getByRole("button", { name: "删除候选", exact: true })).toBeFocused();
+      expect(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      if (theme.id === "seiji") await p.screenshot({ path: `${artifacts}/ux-${mode}-${layout}-${width}.png` });
+    }
+    await context.close();
+  }
+});
+await check("UX-15 #23：阅读末尾导航可达与位置恢复", async () => {
+  for (const width of [1440, 390]) {
+    const { page: p, context } = await fresh(width);
+    const scroller = p.locator(".reading-scroll");
+    await p.getByRole("button", { name: "回到底部", exact: true }).click();
+    const title = p.getByRole("button", { name: "打开会话列表", exact: true });
+    await expect(title).toBeInViewport();
+    await expect(p.getByRole("button", { name: "新建会话", exact: true })).toBeInViewport();
+    const position = await scroller.evaluate(el => el.scrollTop);
+    await selectSession(p, "山间来信");
+    await selectSession(p, "雨落在旧书店");
+    await expect.poll(() => scroller.evaluate(el => el.scrollTop)).toBeCloseTo(position, 0);
+    await expect(title).toBeInViewport();
+    await p.screenshot({ path: `${artifacts}/ux15-navigation-${width}.png` });
+    await context.close();
+  }
+});
+await check("UX-16 #24：模态内地址错误与修正保存", async () => {
+  const { page: p, context } = await fresh(390);
+  await p.getByRole("button", { name: "连接配置", exact: true }).click();
+  await p.getByRole("button", { name: "编辑连接 故事演示连接", exact: true }).click();
+  await p.getByLabel("连接名称", { exact: true }).fill("校验保留名称");
+  const url = p.getByLabel("API Base URL（仅演示）", { exact: true });
+  await url.fill("ftp://example.com");
+  await p.getByRole("button", { name: "保存连接", exact: true }).click();
+  await expect(p.getByRole("dialog").getByRole("alert")).toContainText("地址必须以 http:// 或 https:// 开头");
+  await expect(url).toBeFocused();
+  await expect(url).toHaveAttribute("aria-invalid", "true");
+  await expect(url).toHaveAttribute("aria-describedby", "connection-url-error");
+  await expect(p.getByLabel("连接名称", { exact: true })).toHaveValue("校验保留名称");
+  await p.screenshot({ path: `${artifacts}/ux16-inline-error.png` });
+  await url.fill("https://example.invalid/v1");
+  await expect(p.locator("#connection-url-error")).toHaveCount(0);
+  await p.getByRole("button", { name: "保存连接", exact: true }).click();
+  await expect(p.getByRole("button", { name: "编辑连接 校验保留名称", exact: true })).toBeVisible();
+  await context.close();
+});
+await check("UX-17 #25：连接未保存修改的全部关闭入口", async () => {
+  const { page: p, context } = await fresh();
+  for (const method of ["escape", "close", "outside", "cancel"]) {
+    await p.getByRole("button", { name: "连接配置", exact: true }).click();
+    await p.getByRole("button", { name: "编辑连接 故事演示连接", exact: true }).click();
+    await p.getByLabel("连接名称", { exact: true }).fill(`未保存-${method}`);
+    if (method === "escape") await p.keyboard.press("Escape");
+    if (method === "close") await p.getByRole("dialog").getByRole("button", { name: "关闭", exact: true }).click();
+    if (method === "outside") await p.mouse.click(5, 5);
+    if (method === "cancel") await p.getByRole("button", { name: "取消", exact: true }).click();
+    await expect(p.locator('[role="dialog"]')).toHaveCount(2);
+    await p.getByRole("button", { name: "继续编辑", exact: true }).click();
+    await expect(p.locator('[role="dialog"]')).toHaveCount(1);
+    await expect(p.getByLabel("连接名称", { exact: true })).toHaveValue(`未保存-${method}`);
+    await p.keyboard.press("Escape");
+    await expect(p.locator('[role="dialog"]')).toHaveCount(2);
+    await p.getByRole("button", { name: "放弃修改", exact: true }).click();
+    await expect(p.getByRole("dialog")).toHaveCount(0);
+  }
+  await p.getByRole("button", { name: "连接配置", exact: true }).click();
+  await p.getByRole("button", { name: "编辑连接 故事演示连接", exact: true }).click();
+  await expect(p.getByLabel("连接名称", { exact: true })).toHaveValue("故事演示连接");
+  await p.keyboard.press("Escape");
+  await expect(p.getByRole("dialog")).toHaveCount(0);
+  await context.close();
+});
+await check("UX-18 #26：重命名与两种新建入口的焦点", async () => {
+  const { page: p, context } = await fresh();
+  await p.getByRole("button", { name: "打开会话列表", exact: true }).click();
+  await p.getByRole("button", { name: "管理会话 雨落在旧书店", exact: true }).click();
+  await p.getByRole("menuitem", { name: "重命名会话", exact: true }).click();
+  const field = p.getByLabel("会话新名称", { exact: true });
+  await expect(field).toBeFocused();
+  expect(await field.evaluate(el => (el as HTMLInputElement).selectionEnd! - (el as HTMLInputElement).selectionStart!)).toBe("雨落在旧书店".length);
+  await p.keyboard.type("键盘重命名");
+  await p.keyboard.press("Enter");
+  await expect(p.getByRole("button", { name: "管理会话 键盘重命名", exact: true })).toBeFocused();
+  await p.keyboard.press("Escape");
+  await p.getByRole("button", { name: "新建会话", exact: true }).click();
+  await expect(p.getByLabel("消息输入", { exact: true })).toBeFocused();
+  await p.keyboard.type("主页新建草稿");
+  await p.getByRole("button", { name: "打开会话列表", exact: true }).click();
+  await p.getByRole("dialog").getByRole("button", { name: "新建会话", exact: true }).click();
+  await expect(p.getByRole("dialog")).toHaveCount(0);
+  await expect(p.getByLabel("消息输入", { exact: true })).toBeFocused();
+  await p.keyboard.type("列表新建草稿");
+  await expect(p.getByLabel("消息输入", { exact: true })).toHaveValue("列表新建草稿");
+  await context.close();
+});
+await check("UX-19 #27：同名会话辅助信息、跨日时间与当前项", async () => {
+  const { page: p, context } = await fresh(390);
+  const initial = seed();
+  initial.sessions[1]!.updated = Date.UTC(2025, 0, 2, 1, 2, 3);
+  await context.addInitScript(data => localStorage.setItem("moderntavern.chat.v1", JSON.stringify(data)), initial);
+  await p.reload();
+  await expect(p.locator("h1")).toContainText("雨落在旧书店");
+  await p.getByRole("button", { name: "新建会话", exact: true }).click();
+  await p.getByRole("button", { name: "新建会话", exact: true }).click();
+  await p.getByRole("button", { name: "打开会话列表", exact: true }).click();
+  const duplicate = p.locator(".session-main").filter({ has: p.getByText("新会话", { exact: true }) });
+  await expect(duplicate).toHaveCount(2);
+  await expect(duplicate.nth(0)).toContainText("同名会话 1");
+  await expect(duplicate.nth(1)).toContainText("同名会话 2");
+  await expect(p.locator('.session-main[aria-current="true"]')).toHaveCount(1);
+  await expect(p.locator('.session-main[aria-current="true"] .session-current')).toHaveText("当前");
+  const old = p.locator(".session-main").filter({ hasText: "山间来信" });
+  await expect(old.locator("time")).toContainText("2025/01/02");
+  await expect(old.locator("time")).toHaveAttribute("datetime", "2025-01-02T01:02:03.000Z");
+  await p.screenshot({ path: `${artifacts}/ux19-session-identification.png` });
+  expect(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await context.close();
+});
+await check("UX-20 #28：全屏接收失败保留上下文与确认后收起", async () => {
+  const { page: p, context } = await fresh(390);
+  await scenario(p, "sendfail");
+  await p.getByRole("button", { name: "全屏写作", exact: true }).click();
+  const field = p.getByLabel("全屏写作正文", { exact: true });
+  await field.fill("全屏失败后的草稿");
+  await field.press("Home");
+  await field.press("ArrowRight");
+  await p.getByRole("dialog").getByRole("button", { name: "发送消息", exact: true }).click();
+  await expect(p.getByRole("dialog").getByRole("status")).toContainText("正在等待接收确认");
+  await expect(p.getByRole("dialog").getByRole("button", { name: "正在发送…", exact: true })).toBeDisabled();
+  await expect(p.getByRole("dialog").getByRole("alert")).toContainText("模拟发送未被接收");
+  await expect(field).toHaveValue("全屏失败后的草稿");
+  await expect(field).toBeFocused();
+  expect(await field.evaluate(el => (el as HTMLTextAreaElement).selectionStart)).toBe(1);
+  await p.screenshot({ path: `${artifacts}/ux20-fullscreen-failure.png` });
+  await closeModal(p);
+  await scenario(p, "emptyfail");
+  await p.getByRole("button", { name: "全屏写作", exact: true }).click();
+  await p.getByRole("dialog").getByRole("button", { name: "发送消息", exact: true }).click();
+  await expect(p.getByRole("dialog")).toHaveCount(0);
+  await expect(p.getByLabel("消息输入", { exact: true })).toHaveValue("");
+  await expect(p.getByRole("button", { name: "重试生成", exact: true })).toBeVisible();
+  await expect(p.locator(".message")).toHaveCount(6);
+  await expect(p.getByLabel("消息输入", { exact: true })).toHaveValue("");
+  await context.close();
+});
+await check("UX-21 #29：直接消息操作、换行、焦点与生成锁", async () => {
+  for (const [width, height] of [[1072, 668], [1440, 1000], [390, 844], [360, 800]]) {
+    const { page: p, context } = await fresh(width);
+    await p.setViewportSize({ width, height });
+    const footer = p.locator(".message").last().locator("footer");
+    await footer.getByRole("button", { name: "编辑第 4 条消息", exact: true }).scrollIntoViewIfNeeded();
+    for (const label of ["编辑第 4 条消息", "从第 4 条消息分支", "删除第 4 条消息及后续"]) {
+      await expect(footer.getByRole("button", { name: label, exact: true })).toBeVisible();
+    }
+    await expect(p.getByRole("button", { name: /更多操作/ })).toHaveCount(0);
+    const bounds = await footer.getByRole("button").evaluateAll(buttons => buttons.map(b => ({ left: b.getBoundingClientRect().left, right: b.getBoundingClientRect().right })));
+    expect(bounds.every(b => b.left >= 0 && b.right <= width)).toBe(true);
+    expect(await p.locator(".reading-scroll").evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+    await p.screenshot({ path: `${artifacts}/ux21-direct-actions-${width}.png` });
+    await context.close();
+  }
+  const { page: p, context } = await fresh();
+  const edit = p.getByRole("button", { name: "编辑第 1 条消息", exact: true });
+  await edit.focus();
+  await p.keyboard.press("Enter");
+  await expect(p.getByLabel("编辑消息正文", { exact: true })).toBeFocused();
+  await p.getByLabel("编辑消息正文", { exact: true }).press("Escape");
+  await expect(edit).toBeFocused();
+  const remove = p.getByRole("button", { name: "删除第 1 条消息及后续", exact: true });
+  await remove.click();
+  await expect(p.getByRole("dialog")).toContainText("共 4 条消息");
+  await p.getByRole("dialog").getByRole("button", { name: "取消", exact: true }).click();
+  await expect(remove).toBeFocused();
+  await expect(p.locator(".message")).toHaveCount(4);
+  await p.getByRole("button", { name: "从第 4 条消息分支", exact: true }).click();
+  await expect(p.locator("h1")).toHaveText("雨落在旧书店 Branch #1");
+  await selectSession(p, "雨落在旧书店");
+  await scenario(p, "slow");
+  await p.getByRole("button", { name: "沿此回复续写", exact: true }).click();
+  await expect(p.getByRole("button", { name: "编辑第 1 条消息", exact: true })).toBeDisabled();
+  await expect(p.getByRole("button", { name: "删除第 1 条消息及后续", exact: true })).toBeDisabled();
+  await expect(p.getByRole("button", { name: "从第 5 条消息分支", exact: true })).toBeDisabled();
+  await expect(p.getByRole("button", { name: "从第 1 条消息分支", exact: true })).toBeEnabled();
+  await p.getByRole("button", { name: "停止生成", exact: true }).click();
+  await context.close();
+});
+await browser.close();
+await Bun.write(
+  `${artifacts}/results.json`,
+  JSON.stringify(
+    {
+      browser: "Google Chrome",
+      version: browser.version(),
+      base,
+      results,
+      errors,
+      external,
+    },
+    null,
+    2,
+  ),
+);
+console.log(
+  `${results.filter((x) => x.passed).length}/${results.length} suites passed`,
+);
+if (!results.length || results.some((x) => !x.passed)) process.exit(1);
