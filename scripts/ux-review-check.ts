@@ -323,6 +323,29 @@ await check("UX-17 #25：连接未保存修改的全部关闭入口", async () =
   await expect(p.getByRole("dialog")).toHaveCount(0);
   await context.close();
 });
+await check("UX-18 #26：重命名与两种新建入口的焦点", async () => {
+  const { page: p, context } = await fresh();
+  await p.getByRole("button", { name: "打开会话列表", exact: true }).click();
+  await p.getByRole("button", { name: "管理会话 雨落在旧书店", exact: true }).click();
+  await p.getByRole("menuitem", { name: "重命名会话", exact: true }).click();
+  const field = p.getByLabel("会话新名称", { exact: true });
+  await expect(field).toBeFocused();
+  expect(await field.evaluate(el => (el as HTMLInputElement).selectionEnd! - (el as HTMLInputElement).selectionStart!)).toBe("雨落在旧书店".length);
+  await p.keyboard.type("键盘重命名");
+  await p.keyboard.press("Enter");
+  await expect(p.getByRole("button", { name: "管理会话 键盘重命名", exact: true })).toBeFocused();
+  await p.keyboard.press("Escape");
+  await p.getByRole("button", { name: "新建会话", exact: true }).click();
+  await expect(p.getByLabel("消息输入", { exact: true })).toBeFocused();
+  await p.keyboard.type("主页新建草稿");
+  await p.getByRole("button", { name: "打开会话列表", exact: true }).click();
+  await p.getByRole("dialog").getByRole("button", { name: "新建会话", exact: true }).click();
+  await expect(p.getByRole("dialog")).toHaveCount(0);
+  await expect(p.getByLabel("消息输入", { exact: true })).toBeFocused();
+  await p.keyboard.type("列表新建草稿");
+  await expect(p.getByLabel("消息输入", { exact: true })).toHaveValue("列表新建草稿");
+  await context.close();
+});
 await browser.close();
 await Bun.write(
   `${artifacts}/results.json`,

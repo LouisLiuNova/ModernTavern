@@ -180,11 +180,20 @@ function switchSession(sid: string) {
     panel.value = null;
   });
 }
+let focusComposerAfterClose = false;
+function afterSessionsClose() {
+  if (!focusComposerAfterClose) return;
+  focusComposerAfterClose = false;
+  void composer.value?.focus();
+}
 function createSession() {
   guard(() => {
+    const fromList = panel.value === "sessions";
     create();
+    focusComposerAfterClose = fromList;
     panel.value = null;
     following.value = true;
+    if (!fromList) nextTick(() => composer.value?.focus());
   });
 }
 function askDeleteSession(s: Session) {
@@ -590,6 +599,7 @@ function completeElsewhere() {
     <Modal
       :open="panel === 'sessions'"
       title="会话列表"
+      @closed="afterSessionsClose"
       description="每一种可能，都值得留下。"
       wide
       @update:open="panel = $event ? 'sessions' : null"

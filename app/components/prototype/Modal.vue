@@ -15,7 +15,7 @@ const props = defineProps<{
   returnFocusSelector?: string;
   canClose?: () => boolean;
 }>();
-const emit = defineEmits<{ "update:open": [value: boolean] }>();
+const emit = defineEmits<{ "update:open": [value: boolean]; closed: [] }>();
 let returnFocus: HTMLElement | null = null;
 watch(
   () => props.open,
@@ -32,6 +32,7 @@ function updateOpen(open: boolean) {
 function restore(e: Event) {
   e.preventDefault();
   returnFocus?.focus();
+  emit("closed");
 }
 </script>
 <template>

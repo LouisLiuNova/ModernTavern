@@ -32,9 +32,22 @@ const filtered = computed(() =>
     s.name.toLowerCase().includes(query.value.toLowerCase()),
   ),
 );
+function startRename(s: Session) {
+  renaming.value = s.id;
+  name.value = s.name;
+  nextTick(() => {
+    const field = document.getElementById("session-rename-name") as HTMLInputElement | null;
+    field?.focus();
+    field?.select();
+  });
+}
+function finishRename(s: Session) {
+  renaming.value = "";
+  nextTick(() => document.querySelector<HTMLButtonElement>(`[data-session-manage="${s.id}"]`)?.focus());
+}
 function rename(s: Session) {
   if (name.value.trim()) s.name = name.value.trim();
-  renaming.value = "";
+  finishRename(s);
 }
 </script>
 <template>
@@ -61,12 +74,13 @@ function rename(s: Session) {
         @submit.prevent="rename(s)"
       >
         <Input
+          id="session-rename-name"
           v-model="name"
           aria-label="会话新名称"
           maxlength="120"
           required
         /><Button size="sm" type="submit">保存名称</Button
-        ><Button size="sm" variant="ghost" type="button" @click="renaming = ''"
+        ><Button size="sm" variant="ghost" type="button" @click="finishRename(s)"
           >取消</Button
         >
       </form>
@@ -102,13 +116,11 @@ function rename(s: Session) {
               variant="ghost"
               size="icon-sm"
               :aria-label="`管理会话 ${s.name}`"
+              :data-session-manage="s.id"
               ><MoreHorizontal /></Button></DropdownMenuTrigger
-          ><DropdownMenuContent class="menu" align="end"
+          ><DropdownMenuContent class="menu" align="end" @close-auto-focus="renaming && $event.preventDefault()"
             ><DropdownMenuItem
-              @select="
-                renaming = s.id;
-                name = s.name;
-              "
+              @select="startRename(s)"
               ><Pencil />重命名会话</DropdownMenuItem
             ><DropdownMenuItem class="danger-text" @select="emit('remove', s)"
               ><Trash2 />删除会话</DropdownMenuItem
