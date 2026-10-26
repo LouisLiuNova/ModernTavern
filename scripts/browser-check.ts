@@ -263,10 +263,7 @@ await check(
 );
 await check("编辑跳转三选项、取消确认、分支隔离和候选删除", async () => {
   const { page: p, context } = await fresh();
-  await p
-    .getByRole("button", { name: "第 1 条消息更多操作", exact: true })
-    .click();
-  await p.getByRole("menuitem", { name: "编辑消息", exact: true }).click();
+  await p.getByRole("button", { name: "编辑第 1 条消息", exact: true }).click();
   await p.getByLabel("编辑消息正文").fill("未保存的新设定");
   await p.getByRole("button", { name: "打开会话列表", exact: true }).click();
   await p.locator(".session-main").filter({ hasText: "山间来信" }).click();
@@ -282,10 +279,7 @@ await check("编辑跳转三选项、取消确认、分支隔离和候选删除"
   await closeModal(p);
   await p.getByRole("button", { name: "取消编辑", exact: true }).click();
   await p.getByRole("button", { name: "放弃修改", exact: true }).click();
-  await p
-    .getByRole("button", { name: "第 4 条消息更多操作", exact: true })
-    .click();
-  await p.getByRole("menuitem", { name: "从这里分支", exact: true }).click();
+  await p.getByRole("button", { name: "从第 4 条消息分支", exact: true }).click();
   await expect(p.locator("h1")).toHaveText("雨落在旧书店 Branch #1");
   await p.getByRole("button", { name: "下一个候选", exact: true }).click();
   const chosen = await p
@@ -316,17 +310,9 @@ await check("编辑跳转三选项、取消确认、分支隔离和候选删除"
 });
 await check("历史删除范围、会话删除保留独立分支与重置", async () => {
   const { page: p, context } = await fresh();
-  await p
-    .getByRole("button", { name: "第 2 条消息更多操作", exact: true })
-    .click();
-  await p.getByRole("menuitem", { name: "从这里分支", exact: true }).click();
+  await p.getByRole("button", { name: "从第 2 条消息分支", exact: true }).click();
   await expect(p.locator("h1")).toContainText("Branch #1");
-  await p
-    .getByRole("button", { name: "第 1 条消息更多操作", exact: true })
-    .click();
-  await p
-    .getByRole("menuitem", { name: "删除消息及后续", exact: true })
-    .click();
+  await p.getByRole("button", { name: "删除第 1 条消息及后续", exact: true }).click();
   await expect(p.getByRole("dialog")).toContainText("共 2 条消息");
   await p.getByRole("button", { name: "确认删除消息", exact: true }).click();
   await expect(p.locator(".message")).toHaveCount(0);
@@ -786,10 +772,7 @@ await check("所有文本输入统一使用边线焦点，无外扩色框", asyn
   await p.getByRole("button", { name: "全屏写作", exact: true }).click();
   await verify(p.getByLabel("全屏写作正文", { exact: true }));
   await p.getByRole("button", { name: "收起写作", exact: true }).click();
-  await p
-    .getByRole("button", { name: "第 1 条消息更多操作", exact: true })
-    .click();
-  await p.getByRole("menuitem", { name: "编辑消息", exact: true }).click();
+  await p.getByRole("button", { name: "编辑第 1 条消息", exact: true }).click();
   await verify(p.getByLabel("编辑消息正文"));
   await p.getByRole("button", { name: "取消编辑", exact: true }).click();
   await p.locator(".connection-trigger").click();

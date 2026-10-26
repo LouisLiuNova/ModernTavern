@@ -1,0 +1,13 @@
+{
+  "browser": "Google Chrome",
+  "version": "150.0.7871.46",
+  "base": "http://127.0.0.1:3100",
+  "results": [
+    {
+      "name": "UX-21 #29：直接消息操作、换行、焦点与生成锁",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "external": []
+}

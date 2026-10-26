@@ -1619,3 +1619,7 @@ button.candidate-count {
 .session-time { display: block; margin-top: 4px; color: var(--muted-foreground); font-size: 11px; }
 .session-current { display: inline-flex; align-items: center; gap: 3px; flex-shrink: 0; color: var(--primary); font-size: 11px; }
 .session-meta { flex-wrap: wrap; }
+
+/* 直接呈现消息高频操作，所有宽度下按可用空间换行。 */
+.message-tools { flex-wrap: wrap; }
+.message-actions { flex-wrap: wrap; min-width: 0; }

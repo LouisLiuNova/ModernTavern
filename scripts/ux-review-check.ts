@@ -185,14 +185,12 @@ await check("UX-06/07/09/10/11：导航焦点、纯文本片段、搜索与外�
   expect(after).toEqual(before);
   expect(draft).toContain("山间旅店");
   await selectSession(p, "雨落在旧书店");
-  const trigger = p.getByLabel("第 1 条消息更多操作", { exact: true });
+  const trigger = p.getByLabel("编辑第 1 条消息", { exact: true });
   await trigger.click();
-  await p.getByRole("menuitem", { name: "编辑消息", exact: true }).click();
   await expect(p.getByLabel("编辑消息正文", { exact: true })).toBeFocused();
   await p.getByLabel("编辑消息正文", { exact: true }).press("Escape");
   await expect(trigger).toBeFocused();
   await trigger.click();
-  await p.getByRole("menuitem", { name: "编辑消息", exact: true }).click();
   await p.getByLabel("编辑消息正文", { exact: true }).fill("需要确认的编辑");
   await p.getByRole("button", { name: "取消编辑", exact: true }).click();
   await p.getByRole("button", { name: "放弃修改", exact: true }).click();
@@ -395,6 +393,47 @@ await check("UX-20 #28：全屏接收失败保留上下文与确认后收起", a
   await expect(p.getByRole("button", { name: "重试生成", exact: true })).toBeVisible();
   await expect(p.locator(".message")).toHaveCount(6);
   await expect(p.getByLabel("消息输入", { exact: true })).toHaveValue("");
+  await context.close();
+});
+await check("UX-21 #29：直接消息操作、换行、焦点与生成锁", async () => {
+  for (const [width, height] of [[1072, 668], [1440, 1000], [390, 844], [360, 800]]) {
+    const { page: p, context } = await fresh(width);
+    await p.setViewportSize({ width, height });
+    const footer = p.locator(".message").last().locator("footer");
+    await footer.getByRole("button", { name: "编辑第 4 条消息", exact: true }).scrollIntoViewIfNeeded();
+    for (const label of ["编辑第 4 条消息", "从第 4 条消息分支", "删除第 4 条消息及后续"]) {
+      await expect(footer.getByRole("button", { name: label, exact: true })).toBeVisible();
+    }
+    await expect(p.getByRole("button", { name: /更多操作/ })).toHaveCount(0);
+    const bounds = await footer.getByRole("button").evaluateAll(buttons => buttons.map(b => ({ left: b.getBoundingClientRect().left, right: b.getBoundingClientRect().right })));
+    expect(bounds.every(b => b.left >= 0 && b.right <= width)).toBe(true);
+    expect(await p.locator(".reading-scroll").evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+    await p.screenshot({ path: `${artifacts}/ux21-direct-actions-${width}.png` });
+    await context.close();
+  }
+  const { page: p, context } = await fresh();
+  const edit = p.getByRole("button", { name: "编辑第 1 条消息", exact: true });
+  await edit.focus();
+  await p.keyboard.press("Enter");
+  await expect(p.getByLabel("编辑消息正文", { exact: true })).toBeFocused();
+  await p.getByLabel("编辑消息正文", { exact: true }).press("Escape");
+  await expect(edit).toBeFocused();
+  const remove = p.getByRole("button", { name: "删除第 1 条消息及后续", exact: true });
+  await remove.click();
+  await expect(p.getByRole("dialog")).toContainText("共 4 条消息");
+  await p.getByRole("dialog").getByRole("button", { name: "取消", exact: true }).click();
+  await expect(remove).toBeFocused();
+  await expect(p.locator(".message")).toHaveCount(4);
+  await p.getByRole("button", { name: "从第 4 条消息分支", exact: true }).click();
+  await expect(p.locator("h1")).toHaveText("雨落在旧书店 Branch #1");
+  await selectSession(p, "雨落在旧书店");
+  await scenario(p, "slow");
+  await p.getByRole("button", { name: "沿此回复续写", exact: true }).click();
+  await expect(p.getByRole("button", { name: "编辑第 1 条消息", exact: true })).toBeDisabled();
+  await expect(p.getByRole("button", { name: "删除第 1 条消息及后续", exact: true })).toBeDisabled();
+  await expect(p.getByRole("button", { name: "从第 5 条消息分支", exact: true })).toBeDisabled();
+  await expect(p.getByRole("button", { name: "从第 1 条消息分支", exact: true })).toBeEnabled();
+  await p.getByRole("button", { name: "停止生成", exact: true }).click();
   await context.close();
 });
 await browser.close();

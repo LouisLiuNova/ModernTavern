@@ -3,7 +3,6 @@ import MarkdownIt from "markdown-it";
 import { markdownPreview } from "../../domain/markdown";
 import {
   Copy,
-  MoreHorizontal,
   Pencil,
   GitBranch,
   Trash2,
@@ -22,7 +21,6 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
 } from "../ui/dropdown-menu";
 import { Textarea } from "../ui/textarea";
 import { candidate, content, active, type Message } from "../../domain/chat";
@@ -148,7 +146,7 @@ async function copy() {
       </template>
     </div>
     <footer v-if="!editing" class="message-tools">
-      <div class="row gap-small">
+      <div class="row gap-small message-actions">
         <Button
           variant="ghost"
           size="sm"
@@ -156,31 +154,29 @@ async function copy() {
           :title="copied ? '已复制' : '复制原始 Markdown'"
           @click="copy"
           ><Check v-if="copied" /><Copy v-else /><span>{{ copied ? "已复制" : "复制" }}</span></Button
-        ><DropdownMenu
-          ><DropdownMenuTrigger as-child
-            ><Button
-              variant="ghost"
-              size="sm"
-              :aria-label="`第 ${index + 1} 条消息更多操作`"
-              title="编辑、分支与删除消息"
-              data-edit-trigger
-              ><MoreHorizontal /><span>更多</span></Button></DropdownMenuTrigger
-          ><DropdownMenuContent align="start" class="menu" @close-auto-focus="editing && $event.preventDefault()"
-            ><DropdownMenuItem
-              :disabled="locked"
-              @select="emit('action', 'edit', message)"
-              ><Pencil />编辑消息</DropdownMenuItem
-            ><DropdownMenuItem
-              :disabled="message.candidates.some(active)"
-              @select="emit('action', 'branch', message)"
-              ><GitBranch />从这里分支</DropdownMenuItem
-            ><DropdownMenuSeparator /><DropdownMenuItem
-              :disabled="locked"
-              class="danger-text"
-              @select="emit('action', 'delete', message)"
-              ><Trash2 />删除消息及后续</DropdownMenuItem
-            ></DropdownMenuContent
-          ></DropdownMenu
+        ><Button
+          variant="ghost"
+          size="sm"
+          :aria-label="`编辑第 ${index + 1} 条消息`"
+          :disabled="locked"
+          data-edit-trigger
+          @click="emit('action', 'edit', message)"
+          ><Pencil /><span>编辑</span></Button
+        ><Button
+          variant="ghost"
+          size="sm"
+          :aria-label="`从第 ${index + 1} 条消息分支`"
+          :disabled="message.candidates.some(active)"
+          @click="emit('action', 'branch', message)"
+          ><GitBranch /><span>从这里分支</span></Button
+        ><Button
+          variant="ghost"
+          size="sm"
+          class="danger-text"
+          :aria-label="`删除第 ${index + 1} 条消息及后续`"
+          :disabled="locked"
+          @click="emit('action', 'delete', message)"
+          ><Trash2 /><span>删除消息及后续</span></Button
         >
       </div>
       <div
