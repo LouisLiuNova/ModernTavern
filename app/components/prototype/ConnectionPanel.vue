@@ -63,7 +63,7 @@ onUnmounted(() => {
   apiKey.value = "";
 });
 async function testConnection() {
-  if (testStatus.value === "loading") return;
+  if (testStatus.value === "loading" || !validateUrl()) return;
   const version = ++testVersion;
   testController?.abort();
   testController = new AbortController();
@@ -93,8 +93,19 @@ async function testConnection() {
     testMessage.value = (error as Error).message;
   }
 }
+const urlError = ref("");
+watch(url, () => {
+  if (endpoint.value) urlError.value = "";
+});
+function validateUrl() {
+  if (endpoint.value) return true;
+  urlError.value = "地址必须以 http:// 或 https:// 开头，并包含有效主机名。";
+  nextTick(() => document.getElementById("connection-url")?.focus());
+  return false;
+}
 const pendingDelete = ref("");
 function start(cid = "") {
+  urlError.value = "";
   invalidateTest();
   simulatedResponse.value = "success";
   const c = state.connections.find((c) => c.id === cid);
@@ -108,12 +119,7 @@ function start(cid = "") {
 }
 function save() {
   if (!name.value.trim() || !model.value.trim()) return;
-  try {
-    modelsEndpoint(url.value);
-  } catch {
-    tell("请填写有效的 HTTP(S) 演示地址。");
-    return;
-  }
+  if (!validateUrl()) return;
   const c = {
     id: editId.value || id(),
     name: name.value.trim(),
@@ -210,7 +216,10 @@ function save() {
       required
       maxlength="100"
     /><label for="connection-url">API Base URL（仅演示）</label
-    ><Input id="connection-url" v-model="url" type="url" required />
+    ><Input id="connection-url" v-model="url" type="url" required
+      :aria-invalid="urlError ? true : undefined"
+      :aria-describedby="urlError ? 'connection-url-error' : undefined" />
+    <p v-if="urlError" id="connection-url-error" class="text-destructive text-sm" role="alert">{{ urlError }}</p>
     <label for="api-key">API Key（可留空）</label>
     <div class="connection-key-field">
       <Input

@@ -277,6 +277,26 @@ await check("UX-15 #23：阅读末尾导航可达与位置恢复", async () => {
     await context.close();
   }
 });
+await check("UX-16 #24：模态内地址错误与修正保存", async () => {
+  const { page: p, context } = await fresh(390);
+  await p.getByRole("button", { name: "连接配置", exact: true }).click();
+  await p.getByRole("button", { name: "编辑连接 故事演示连接", exact: true }).click();
+  await p.getByLabel("连接名称", { exact: true }).fill("校验保留名称");
+  const url = p.getByLabel("API Base URL（仅演示）", { exact: true });
+  await url.fill("ftp://example.com");
+  await p.getByRole("button", { name: "保存连接", exact: true }).click();
+  await expect(p.getByRole("dialog").getByRole("alert")).toContainText("地址必须以 http:// 或 https:// 开头");
+  await expect(url).toBeFocused();
+  await expect(url).toHaveAttribute("aria-invalid", "true");
+  await expect(url).toHaveAttribute("aria-describedby", "connection-url-error");
+  await expect(p.getByLabel("连接名称", { exact: true })).toHaveValue("校验保留名称");
+  await p.screenshot({ path: `${artifacts}/ux16-inline-error.png` });
+  await url.fill("https://example.invalid/v1");
+  await expect(p.locator("#connection-url-error")).toHaveCount(0);
+  await p.getByRole("button", { name: "保存连接", exact: true }).click();
+  await expect(p.getByRole("button", { name: "编辑连接 校验保留名称", exact: true })).toBeVisible();
+  await context.close();
+});
 await browser.close();
 await Bun.write(
   `${artifacts}/results.json`,
