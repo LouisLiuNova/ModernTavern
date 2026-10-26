@@ -1,0 +1,203 @@
+// ModernTavern v0.4.2 - 完整独立文件，必须包含下方全部 10 个 Table 定义。
+// 本文件是展示／审阅模型，生产仍需补充条件唯一索引和延迟外键。
+
+Table auth_user {
+  id text [pk, not null]
+  name text [not null]
+  email text [not null, unique]
+  email_verified integer [not null, default: 0]
+  image text
+  created_at integer [not null]
+  updated_at integer [not null]
+  checks {
+    `email_verified IN (0, 1)` [name: 'auth_user_email_verified_bool']
+  }
+}
+
+Table auth_session {
+  id text [pk, not null]
+  user_id text [not null]
+  token text [not null, unique]
+  expires_at integer [not null]
+  ip_address text
+  user_agent text
+  created_at integer [not null]
+  updated_at integer [not null]
+  last_foreground_at integer [not null]
+  indexes {
+    user_id [name: 'auth_session_user_idx']
+  }
+}
+
+Table auth_account {
+  id text [pk, not null]
+  user_id text [not null]
+  account_id text [not null]
+  provider_id text [not null]
+  access_token text
+  refresh_token text
+  id_token text
+  access_token_expires_at integer
+  refresh_token_expires_at integer
+  scope text
+  password text
+  created_at integer [not null]
+  updated_at integer [not null]
+  indexes {
+    user_id [name: 'auth_account_user_idx']
+  }
+}
+
+Table auth_verification {
+  id text [pk, not null]
+  identifier text [not null]
+  value text [not null]
+  expires_at integer [not null]
+  created_at integer [not null]
+  updated_at integer [not null]
+  indexes {
+    identifier [name: 'auth_verification_identifier_idx']
+  }
+}
+
+Table conversations {
+  id text [pk, not null]
+  owner_id text [not null]
+  name text [not null, default: '新会话']
+  created_at integer [not null]
+  activity_at integer [not null]
+  revision integer [not null, default: 1]
+  unread integer [not null, default: 0]
+  branch_counter integer [not null, default: 0]
+  source_conversation_id text
+  source_message_id text
+  source_name text
+  branched_at integer
+  indexes {
+    (owner_id, activity_at, id) [name: 'conversations_owner_activity_idx']
+  }
+  checks {
+    `revision >= 1` [name: 'conversation_revision_positive']
+    `branch_counter >= 0` [name: 'conversation_branch_counter_nonnegative']
+    `unread IN (0, 1)` [name: 'conversation_unread_bool']
+    `(source_conversation_id IS NULL AND source_message_id IS NULL AND source_name IS NULL AND branched_at IS NULL) OR (source_conversation_id IS NOT NULL AND source_message_id IS NOT NULL AND source_name IS NOT NULL AND branched_at IS NOT NULL)` [name: 'conversation_branch_source_complete']
+  }
+}
+
+Table messages {
+  id text [pk, not null]
+  conversation_id text [not null]
+  position integer [not null]
+  role text [not null]
+  text text
+  selected_candidate_id text
+  created_at integer [not null]
+  edited_at integer
+  indexes {
+    (conversation_id, position) [unique, name: 'messages_conversation_position_uq']
+    (conversation_id, id) [unique, name: 'messages_conversation_id_uq']
+    (id, selected_candidate_id) [name: 'messages_selected_candidate_idx']
+  }
+  checks {
+    `position >= 0` [name: 'message_position_nonnegative']
+    `role IN ('user', 'assistant')` [name: 'message_role_valid']
+    `(role = 'user' AND text IS NOT NULL AND selected_candidate_id IS NULL) OR (role = 'assistant' AND text IS NULL AND selected_candidate_id IS NOT NULL AND edited_at IS NULL)` [name: 'message_role_payload_valid']
+  }
+}
+
+Table candidates {
+  id text [pk, not null]
+  conversation_id text [not null]
+  message_id text [not null]
+  position integer [not null]
+  text text [not null, default: '']
+  state text [not null]
+  error_code text
+  error_message text
+  origin_connection_id text
+  origin_connection_name text
+  origin_model_id text
+  generation_started_at integer
+  ended_at integer
+  created_at integer [not null]
+  edited_at integer
+  indexes {
+    (message_id, position) [unique, name: 'candidates_message_position_uq']
+    (message_id, id) [unique, name: 'candidates_message_id_uq']
+    (conversation_id, message_id) [name: 'candidates_conversation_message_idx']
+  }
+  checks {
+    `position >= 0` [name: 'candidate_position_nonnegative']
+    `state IN ('generating', 'complete', 'stopped', 'interrupted')` [name: 'candidate_state_valid']
+    `state = 'interrupted' OR (error_code IS NULL AND error_message IS NULL)` [name: 'candidate_error_only_interrupted']
+    `error_message IS NULL OR error_code IS NOT NULL` [name: 'candidate_error_message_has_code']
+    `state <> 'generating' OR ended_at IS NULL` [name: 'candidate_generating_has_no_end']
+  }
+}
+
+Table connections {
+  id text [pk, not null]
+  owner_id text [not null]
+  name text [not null]
+  base_url text [not null]
+  api_key text [not null, default: '']
+  revision integer [not null, default: 1]
+  created_at integer [not null]
+  updated_at integer [not null]
+  indexes {
+    owner_id [name: 'connections_owner_idx']
+  }
+  checks {
+    `revision >= 1` [name: 'connection_revision_positive']
+  }
+}
+
+Table account_preferences {
+  owner_id text [pk, not null]
+  theme text [not null, default: 'seiji']
+  color_mode text [not null, default: 'system']
+  display_mode text [not null, default: 'reading']
+  font_size integer [not null, default: 17]
+  content_width integer [not null, default: 800]
+  smooth_output integer [not null, default: 1]
+  updated_at integer [not null]
+  checks {
+    `theme IN ('kohbai', 'kikuchiba', 'matsuba', 'seiji', 'hanada', 'fuji')` [name: 'preferences_theme_valid']
+    `color_mode IN ('light', 'dark', 'system')` [name: 'preferences_color_mode_valid']
+    `display_mode IN ('reading', 'bubble')` [name: 'preferences_display_mode_valid']
+    `font_size BETWEEN 14 AND 22` [name: 'preferences_font_size_range']
+    `content_width BETWEEN 640 AND 1040` [name: 'preferences_content_width_range']
+    `smooth_output IN (0, 1)` [name: 'preferences_smooth_output_bool']
+  }
+}
+
+Table operation_receipts {
+  owner_id text [not null]
+  operation_id text [not null]
+  operation_kind text [not null]
+  fingerprint_version integer [not null, default: 1]
+  request_hash text [not null]
+  conversation_id text [not null]
+  result_message_id text [not null]
+  result_candidate_id text [not null]
+  created_at integer [not null]
+  indexes {
+    (owner_id, operation_id) [pk, name: 'operation_receipts_pk']
+    (owner_id, conversation_id) [name: 'receipts_owner_conversation_idx']
+  }
+  checks {
+    `operation_kind IN ('send', 'generate_reply', 'continue', 'regenerate')` [name: 'receipt_operation_kind_valid']
+    `fingerprint_version = 1` [name: 'receipt_fingerprint_version_supported']
+    `length(request_hash) = 64 AND request_hash NOT GLOB '*[^0-9a-f]*'` [name: 'receipt_sha256_hex']
+  }
+}
+
+Ref: auth_session.user_id > auth_user.id [delete: cascade, update: no action]
+Ref: auth_account.user_id > auth_user.id [delete: cascade, update: no action]
+Ref: conversations.owner_id > auth_user.id [delete: restrict, update: no action]
+Ref: connections.owner_id > auth_user.id [delete: restrict, update: no action]
+Ref: auth_user.id - account_preferences.owner_id [delete: restrict, update: no action]
+Ref: operation_receipts.owner_id > auth_user.id [delete: restrict, update: no action]
+Ref: messages.conversation_id > conversations.id [delete: cascade, update: no action]
+Ref: candidates.(conversation_id, message_id) > messages.(conversation_id, id) [delete: cascade, update: no action]
+Ref: messages.(id, selected_candidate_id) > candidates.(message_id, id) [delete: no action, update: no action]
