@@ -13,6 +13,7 @@ import {
 } from "lucide-vue-next";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import Modal from "./Modal.vue";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -26,6 +27,7 @@ import {
   type ModelResponse,
 } from "../../domain/model-request";
 import { modelsEndpoint } from "../../domain/models";
+const emit = defineEmits<{ close: [] }>();
 const { state, tell } = useChat();
 const { getKey, hasKey, setKey, forgetKey } = useConnectionKeys();
 const apiKey = ref(""),
@@ -103,6 +105,31 @@ function validateUrl() {
   nextTick(() => document.getElementById("connection-url")?.focus());
   return false;
 }
+const initialValues = ref("");
+const pendingDiscard = ref<"close" | "cancel" | null>(null);
+const formValues = () => JSON.stringify([name.value, url.value, model.value, apiKey.value]);
+const dirty = computed(() => editing.value && formValues() !== initialValues.value);
+function requestClose() {
+  if (!dirty.value) return true;
+  pendingDiscard.value = "close";
+  return false;
+}
+function discard() {
+  if (!pendingDiscard.value && dirty.value) return;
+  const close = pendingDiscard.value === "close";
+  invalidateTest();
+  editing.value = false;
+  apiKey.value = "";
+  initialValues.value = "";
+  showKey.value = false;
+  pendingDiscard.value = null;
+  if (close) emit("close");
+}
+function cancelEdit() {
+  if (dirty.value) pendingDiscard.value = "cancel";
+  else discard();
+}
+defineExpose({ requestClose });
 const pendingDelete = ref("");
 function start(cid = "") {
   urlError.value = "";
@@ -115,6 +142,7 @@ function start(cid = "") {
   name.value = c?.name || "";
   url.value = c?.url || "https://example.invalid/v1";
   model.value = c?.model || "story-demo";
+  initialValues.value = formValues();
   editing.value = true;
 }
 function save() {
@@ -328,14 +356,17 @@ function save() {
       <Button
         type="button"
         variant="ghost"
-        @click="
-          invalidateTest();
-          editing = false;
-          apiKey = '';
-          showKey = false;
-        "
+        @click="cancelEdit"
         >取消</Button
       ><Button type="submit">保存连接</Button>
     </div>
   </form>
+  <Modal :open="pendingDiscard !== null" title="放弃未保存的连接修改？"
+    description="连接修改尚未保存。继续编辑可保留当前输入，放弃后将恢复原配置。"
+    @update:open="pendingDiscard = $event ? pendingDiscard : null">
+    <div class="row end">
+      <Button variant="outline" @click="pendingDiscard = null">继续编辑</Button>
+      <Button variant="destructive" @click="discard">放弃修改</Button>
+    </div>
+  </Modal>
 </template>

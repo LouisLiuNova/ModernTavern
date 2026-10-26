@@ -297,6 +297,32 @@ await check("UX-16 #24：模态内地址错误与修正保存", async () => {
   await expect(p.getByRole("button", { name: "编辑连接 校验保留名称", exact: true })).toBeVisible();
   await context.close();
 });
+await check("UX-17 #25：连接未保存修改的全部关闭入口", async () => {
+  const { page: p, context } = await fresh();
+  for (const method of ["escape", "close", "outside", "cancel"]) {
+    await p.getByRole("button", { name: "连接配置", exact: true }).click();
+    await p.getByRole("button", { name: "编辑连接 故事演示连接", exact: true }).click();
+    await p.getByLabel("连接名称", { exact: true }).fill(`未保存-${method}`);
+    if (method === "escape") await p.keyboard.press("Escape");
+    if (method === "close") await p.getByRole("dialog").getByRole("button", { name: "关闭", exact: true }).click();
+    if (method === "outside") await p.mouse.click(5, 5);
+    if (method === "cancel") await p.getByRole("button", { name: "取消", exact: true }).click();
+    await expect(p.locator('[role="dialog"]')).toHaveCount(2);
+    await p.getByRole("button", { name: "继续编辑", exact: true }).click();
+    await expect(p.locator('[role="dialog"]')).toHaveCount(1);
+    await expect(p.getByLabel("连接名称", { exact: true })).toHaveValue(`未保存-${method}`);
+    await p.keyboard.press("Escape");
+    await expect(p.locator('[role="dialog"]')).toHaveCount(2);
+    await p.getByRole("button", { name: "放弃修改", exact: true }).click();
+    await expect(p.getByRole("dialog")).toHaveCount(0);
+  }
+  await p.getByRole("button", { name: "连接配置", exact: true }).click();
+  await p.getByRole("button", { name: "编辑连接 故事演示连接", exact: true }).click();
+  await expect(p.getByLabel("连接名称", { exact: true })).toHaveValue("故事演示连接");
+  await p.keyboard.press("Escape");
+  await expect(p.getByRole("dialog")).toHaveCount(0);
+  await context.close();
+});
 await browser.close();
 await Bun.write(
   `${artifacts}/results.json`,

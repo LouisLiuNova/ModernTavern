@@ -13,6 +13,7 @@ const props = defineProps<{
   wide?: boolean;
   full?: boolean;
   returnFocusSelector?: string;
+  canClose?: () => boolean;
 }>();
 const emit = defineEmits<{ "update:open": [value: boolean] }>();
 let returnFocus: HTMLElement | null = null;
@@ -24,13 +25,17 @@ watch(
       : null) || document.activeElement as HTMLElement;
   },
 );
+function updateOpen(open: boolean) {
+  if (!open && props.canClose && !props.canClose()) return;
+  emit("update:open", open);
+}
 function restore(e: Event) {
   e.preventDefault();
   returnFocus?.focus();
 }
 </script>
 <template>
-  <Dialog :open="open" @update:open="emit('update:open', $event)"
+  <Dialog :open="open" @update:open="updateOpen"
     ><DialogContent
       :class="['modal', { 'modal-wide': wide, 'modal-full': full }]"
       @close-auto-focus="restore"

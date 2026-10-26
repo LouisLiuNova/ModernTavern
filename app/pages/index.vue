@@ -66,6 +66,7 @@ const panel = ref<
   "sessions" | "connection" | "appearance" | "scenarios" | "data" | null
 >(null);
 const composer = ref<InstanceType<typeof Composer>>();
+const connectionPanel = ref<InstanceType<typeof ConnectionPanel>>();
 const scroller = ref<HTMLElement>(),
   following = ref(true),
   editing = ref(""),
@@ -600,9 +601,10 @@ function completeElsewhere() {
     <Modal
       :open="panel === 'connection'"
       title="连接配置"
+      :can-close="() => connectionPanel?.requestClose() ?? true"
       description="管理 API 地址、密钥与模型。当前配置仅供模拟演示。"
       @update:open="panel = $event ? 'connection' : null"
-      ><ConnectionPanel
+      ><ConnectionPanel ref="connectionPanel" @close="panel = null"
     /></Modal>
     <Modal
       :open="panel === 'appearance'"
