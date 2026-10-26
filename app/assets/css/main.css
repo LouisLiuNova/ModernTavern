@@ -1593,3 +1593,25 @@ button.candidate-count {
 @media (max-width: 640px) {
   .composer-bottom [data-slot="button"] { font-size: 13px; }
 }
+
+/* 会话标题作为唯一列表入口，始终位于阅读滚动区之外。 */
+.story-heading.story-navigation {
+  flex: none;
+  align-self: center;
+  width: calc(100% - 48px);
+  max-width: var(--reading-width);
+  margin: 0;
+  padding: 8px 3px 12px;
+}
+.story-navigation .story-title-row { margin: 0 0 4px; }
+.story-navigation .story-title h1 {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 23px;
+}
+.story-navigation .story-title > svg { flex-shrink: 0; }
+@media (max-width: 640px) {
+  .story-heading.story-navigation { width: calc(100% - 28px); padding: 4px 5px 8px; }
+  .story-navigation .story-title h1 { font-size: 20px; }
+}

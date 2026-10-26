@@ -260,6 +260,23 @@ await check("UX-12/13/14：十二色板×三尺寸×两布局实际表面与叠�
     await context.close();
   }
 });
+await check("UX-15 #23：阅读末尾导航可达与位置恢复", async () => {
+  for (const width of [1440, 390]) {
+    const { page: p, context } = await fresh(width);
+    const scroller = p.locator(".reading-scroll");
+    await p.getByRole("button", { name: "回到底部", exact: true }).click();
+    const title = p.getByRole("button", { name: "打开会话列表", exact: true });
+    await expect(title).toBeInViewport();
+    await expect(p.getByRole("button", { name: "新建会话", exact: true })).toBeInViewport();
+    const position = await scroller.evaluate(el => el.scrollTop);
+    await selectSession(p, "山间来信");
+    await selectSession(p, "雨落在旧书店");
+    await expect.poll(() => scroller.evaluate(el => el.scrollTop)).toBeCloseTo(position, 0);
+    await expect(title).toBeInViewport();
+    await p.screenshot({ path: `${artifacts}/ux15-navigation-${width}.png` });
+    await context.close();
+  }
+});
 await browser.close();
 await Bun.write(
   `${artifacts}/results.json`,

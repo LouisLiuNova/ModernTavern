@@ -78,3 +78,7 @@ CHROME_BIN=/opt/google/chrome/chrome \
 MT_ARTIFACTS=/tmp/moderntavern-ux-review \
 bun scripts/ux-review-check.ts
 ```
+
+## 2026-10-26 走查修复
+
+- #23：会话标题与新建入口移到阅读滚动区之外，保持标题下拉为唯一会话列表入口；长标题单行省略。Chrome 定向回归 UX-15 在 1440px／390px 验证阅读末尾入口可达及切换后的阅读位置恢复，1/1 组通过。

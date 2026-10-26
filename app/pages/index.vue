@@ -471,21 +471,7 @@ function completeElsewhere() {
         >恢复连接</Button
       >
     </div>
-    <main
-      ref="scroller"
-      class="reading-scroll"
-      :class="appearance.layout"
-      @scroll.passive="onScroll"
-      @scrollend="finishReturn"
-      @wheel.passive="cancelReturn"
-      @touchstart.passive="cancelReturn"
-      @keydown="cancelReturn"
-    >
-      <div class="story-container">
-        <div class="story-heading">
-          <div class="story-eyebrow">
-            <span class="tiny-rule" /> YOUR STORY, UNFOLDING
-          </div>
+        <div class="story-heading story-navigation">
           <div class="story-title-row">
             <button
               class="story-title"
@@ -514,6 +500,17 @@ function completeElsewhere() {
             ><span class="story-subtitle-right">一段对话，无限可能</span>
           </div>
         </div>
+    <main
+      ref="scroller"
+      class="reading-scroll"
+      :class="appearance.layout"
+      @scroll.passive="onScroll"
+      @scrollend="finishReturn"
+      @wheel.passive="cancelReturn"
+      @touchstart.passive="cancelReturn"
+      @keydown="cancelReturn"
+    >
+      <div class="story-container">
         <div v-if="truncated" class="context-note">
           <CircleAlert :size="15" />上下文已省略最早的 2
           条消息，完整历史仍保留。<button
