@@ -14,6 +14,7 @@ const props = defineProps<{
   modelValue: string;
   locked: boolean;
   accepting: boolean;
+  sendOutcome?: { accepted: boolean; error?: string } | null;
   hasMessages: boolean;
   lastRole?: string;
   incomplete?: boolean;
@@ -29,6 +30,26 @@ const emit = defineEmits<{
 const expanded = ref(false),
   composing = ref(false),
   field = ref<HTMLTextAreaElement>();
+const fullField = ref<HTMLTextAreaElement>();
+const fullError = ref("");
+watch(expanded, () => { fullError.value = ""; });
+watch(() => props.sendOutcome, async (result) => {
+  if (!expanded.value || !result) return;
+  if (result.accepted) {
+    expanded.value = false;
+    return;
+  }
+  fullError.value = result.error || "发送未被接收，草稿已保留。";
+  const start = fullField.value?.selectionStart;
+  const end = fullField.value?.selectionEnd;
+  await nextTick();
+  fullField.value?.focus({ preventScroll: true });
+  if (start !== undefined && end !== undefined) fullField.value?.setSelectionRange(start, end);
+});
+function sendFull() {
+  fullError.value = "";
+  emit("send");
+}
 const mobile = ref(false);
 onMounted(() => {
   const q = matchMedia("(pointer: coarse), (max-width: 640px)");
@@ -142,14 +163,18 @@ function update(e: Event) {
     full
   >
     <textarea
+      ref="fullField"
       :value="modelValue"
       class="full-writing"
+      :aria-describedby="fullError ? 'full-send-error' : undefined"
       aria-label="全屏写作正文"
       placeholder="在这里展开你的故事……"
       @input="update"
       @compositionstart="composing = true"
       @compositionend="composing = false"
     />
+    <p v-if="fullError" id="full-send-error" class="text-destructive text-sm" role="alert">{{ fullError }} 可再次点击发送重试。</p>
+    <p v-if="accepting" role="status" class="muted">正在等待接收确认，草稿仍保留。</p>
     <div class="row end">
       <span class="muted">{{ modelValue.length }} 字符</span
       ><Button variant="outline" @click="expanded = false"
@@ -157,11 +182,8 @@ function update(e: Event) {
       ><Button v-if="locked" @click="emit('stop')"><Square />停止生成</Button><Button
         v-else
         :disabled="accepting || !modelValue.trim()"
-        @click="
-          emit('send');
-          expanded = false;
-        "
-        ><ArrowUp />发送消息</Button
+        @click="sendFull"
+        ><LoaderCircle v-if="accepting" class="spin" /><ArrowUp v-else />{{ accepting ? "正在发送…" : "发送消息" }}</Button
       >
     </div></Modal
   >

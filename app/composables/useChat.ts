@@ -132,28 +132,30 @@ export function useChat() {
   }
   async function submit() {
     const s = current.value;
-    if (!s || busy(s) || accepting.has(s.id)) return;
+    if (!s || busy(s) || accepting.has(s.id)) return false;
     if (!connection.value) {
       tell("请先在“连接”中选择演示配置。");
-      return;
+      return false;
     }
     const text = s.draft;
-    if (!text.trim()) return;
+    if (!text.trim()) return false;
     const mode = scenario.value;
     accepting.add(s.id);
     await new Promise((r) => setTimeout(r, 450));
     try {
-      if (!state.sessions.includes(s)) return;
+      if (!state.sessions.includes(s)) return false;
       if (mode === "sendfail") {
         tell("模拟发送未被接收，草稿已保留。", undefined, "error");
-        return;
+        return false;
       }
       const newer = s.draft;
       const c = send(s, text);
       if (newer !== text) s.draft = newer;
       run(s, c, mode);
+      return true;
     } catch (e) {
       tell((e as Error).message, undefined, "error");
+      return false;
     } finally {
       accepting.delete(s.id);
     }

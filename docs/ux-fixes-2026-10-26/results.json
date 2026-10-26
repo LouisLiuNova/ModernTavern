@@ -1,0 +1,33 @@
+{
+  "browser": "Google Chrome",
+  "version": "150.0.7871.46",
+  "base": "http://127.0.0.1:3100",
+  "results": [
+    {
+      "name": "UX-15 #23：阅读末尾导航可达与位置恢复",
+      "passed": true
+    },
+    {
+      "name": "UX-16 #24：模态内地址错误与修正保存",
+      "passed": true
+    },
+    {
+      "name": "UX-17 #25：连接未保存修改的全部关闭入口",
+      "passed": true
+    },
+    {
+      "name": "UX-18 #26：重命名与两种新建入口的焦点",
+      "passed": true
+    },
+    {
+      "name": "UX-19 #27：同名会话辅助信息、跨日时间与当前项",
+      "passed": true
+    },
+    {
+      "name": "UX-20 #28：全屏接收失败保留上下文与确认后收起",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "external": []
+}

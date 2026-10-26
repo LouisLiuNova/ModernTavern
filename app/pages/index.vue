@@ -364,10 +364,18 @@ onMounted(() => {
   document.addEventListener("visibilitychange", read);
   onUnmounted(() => document.removeEventListener("visibilitychange", read));
 });
+const sendOutcome = ref<{ accepted: boolean; error?: string } | null>(null);
 function sendMessage() {
+  sendOutcome.value = null;
   guard(() => {
     following.value = true;
-    void submit();
+    const sid = state.current;
+    void submit().then(accepted => {
+      if (state.current === sid) sendOutcome.value = {
+        accepted,
+        error: accepted ? undefined : notice.value?.text || "发送未被接收，草稿已保留。",
+      };
+    });
     jumpBottom();
   });
 }
@@ -579,6 +587,7 @@ function completeElsewhere() {
         :model-value="current.draft"
         :locked="busy(current)"
         :accepting="accepting.has(current.id)"
+        :send-outcome="sendOutcome"
         :has-messages="!!current.messages.length"
         :last-role="current.messages.at(-1)?.role"
         :incomplete="continuation.incomplete"

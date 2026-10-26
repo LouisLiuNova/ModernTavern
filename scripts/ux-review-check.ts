@@ -370,6 +370,33 @@ await check("UX-19 #27：同名会话辅助信息、跨日时间与当前项", a
   expect(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await context.close();
 });
+await check("UX-20 #28：全屏接收失败保留上下文与确认后收起", async () => {
+  const { page: p, context } = await fresh(390);
+  await scenario(p, "sendfail");
+  await p.getByRole("button", { name: "全屏写作", exact: true }).click();
+  const field = p.getByLabel("全屏写作正文", { exact: true });
+  await field.fill("全屏失败后的草稿");
+  await field.press("Home");
+  await field.press("ArrowRight");
+  await p.getByRole("dialog").getByRole("button", { name: "发送消息", exact: true }).click();
+  await expect(p.getByRole("dialog").getByRole("status")).toContainText("正在等待接收确认");
+  await expect(p.getByRole("dialog").getByRole("button", { name: "正在发送…", exact: true })).toBeDisabled();
+  await expect(p.getByRole("dialog").getByRole("alert")).toContainText("模拟发送未被接收");
+  await expect(field).toHaveValue("全屏失败后的草稿");
+  await expect(field).toBeFocused();
+  expect(await field.evaluate(el => (el as HTMLTextAreaElement).selectionStart)).toBe(1);
+  await p.screenshot({ path: `${artifacts}/ux20-fullscreen-failure.png` });
+  await closeModal(p);
+  await scenario(p, "emptyfail");
+  await p.getByRole("button", { name: "全屏写作", exact: true }).click();
+  await p.getByRole("dialog").getByRole("button", { name: "发送消息", exact: true }).click();
+  await expect(p.getByRole("dialog")).toHaveCount(0);
+  await expect(p.getByLabel("消息输入", { exact: true })).toHaveValue("");
+  await expect(p.getByRole("button", { name: "重试生成", exact: true })).toBeVisible();
+  await expect(p.locator(".message")).toHaveCount(6);
+  await expect(p.getByLabel("消息输入", { exact: true })).toHaveValue("");
+  await context.close();
+});
 await browser.close();
 await Bun.write(
   `${artifacts}/results.json`,
