@@ -1615,3 +1615,7 @@ button.candidate-count {
   .story-heading.story-navigation { width: calc(100% - 28px); padding: 4px 5px 8px; }
   .story-navigation .story-title h1 { font-size: 20px; }
 }
+
+.session-time { display: block; margin-top: 4px; color: var(--muted-foreground); font-size: 11px; }
+.session-current { display: inline-flex; align-items: center; gap: 3px; flex-shrink: 0; color: var(--primary); font-size: 11px; }
+.session-meta { flex-wrap: wrap; }

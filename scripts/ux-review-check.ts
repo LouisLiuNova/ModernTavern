@@ -1,6 +1,7 @@
 import { chromium, expect, type Page } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 import { themes } from "../app/domain/appearance";
+import { seed } from "../app/domain/chat";
 const base = process.env.MT_BASE_URL || "http://127.0.0.1:3101";
 const artifacts = process.env.MT_ARTIFACTS || "/tmp/moderntavern-browser-check";
 await mkdir(artifacts, { recursive: true });
@@ -344,6 +345,29 @@ await check("UX-18 #26：重命名与两种新建入口的焦点", async () => {
   await expect(p.getByLabel("消息输入", { exact: true })).toBeFocused();
   await p.keyboard.type("列表新建草稿");
   await expect(p.getByLabel("消息输入", { exact: true })).toHaveValue("列表新建草稿");
+  await context.close();
+});
+await check("UX-19 #27：同名会话辅助信息、跨日时间与当前项", async () => {
+  const { page: p, context } = await fresh(390);
+  const initial = seed();
+  initial.sessions[1]!.updated = Date.UTC(2025, 0, 2, 1, 2, 3);
+  await context.addInitScript(data => localStorage.setItem("moderntavern.chat.v1", JSON.stringify(data)), initial);
+  await p.reload();
+  await expect(p.locator("h1")).toContainText("雨落在旧书店");
+  await p.getByRole("button", { name: "新建会话", exact: true }).click();
+  await p.getByRole("button", { name: "新建会话", exact: true }).click();
+  await p.getByRole("button", { name: "打开会话列表", exact: true }).click();
+  const duplicate = p.locator(".session-main").filter({ has: p.getByText("新会话", { exact: true }) });
+  await expect(duplicate).toHaveCount(2);
+  await expect(duplicate.nth(0)).toContainText("同名会话 1");
+  await expect(duplicate.nth(1)).toContainText("同名会话 2");
+  await expect(p.locator('.session-main[aria-current="true"]')).toHaveCount(1);
+  await expect(p.locator('.session-main[aria-current="true"] .session-current')).toHaveText("当前");
+  const old = p.locator(".session-main").filter({ hasText: "山间来信" });
+  await expect(old.locator("time")).toContainText("2025/01/02");
+  await expect(old.locator("time")).toHaveAttribute("datetime", "2025-01-02T01:02:03.000Z");
+  await p.screenshot({ path: `${artifacts}/ux19-session-identification.png` });
+  expect(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await context.close();
 });
 await browser.close();

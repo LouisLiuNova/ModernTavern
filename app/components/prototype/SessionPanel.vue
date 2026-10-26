@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
   Search,
+  Check,
   Plus,
   MoreHorizontal,
   Pencil,
@@ -32,6 +33,23 @@ const filtered = computed(() =>
     s.name.toLowerCase().includes(query.value.toLowerCase()),
   ),
 );
+const duplicateNumbers = computed(() => {
+  const groups = new Map<string, Session[]>();
+  for (const s of state.sessions) {
+    const group = groups.get(s.name);
+    if (group) group.push(s);
+    else groups.set(s.name, [s]);
+  }
+  const numbers = new Map<string, number>();
+  for (const group of groups.values()) {
+    if (group.length > 1) group.forEach((s, index) => numbers.set(s.id, index + 1));
+  }
+  return numbers;
+});
+const dateFormat = new Intl.DateTimeFormat("zh-CN", {
+  year: "numeric", month: "2-digit", day: "2-digit",
+  hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
+});
 function startRename(s: Session) {
   renaming.value = s.id;
   name.value = s.name;
@@ -85,22 +103,18 @@ function rename(s: Session) {
         >
       </form>
       <template v-else
-        ><button class="session-main" @click="emit('select', s.id)">
+        ><button class="session-main" :aria-current="state.current === s.id ? 'true' : undefined" @click="emit('select', s.id)">
           <span class="session-top"
             ><strong>{{ s.name }}</strong
-            ><time>{{
-              new Date(s.updated).toLocaleTimeString("zh-CN", {
-                hour: "2-digit",
-                minute: "2-digit",
-              })
-            }}</time></span
-          ><span class="session-preview">{{
+            ><span v-if="state.current === s.id" class="session-current"><Check :size="12" />当前</span></span>
+          <time class="session-time" :datetime="new Date(s.updated).toISOString()">{{ dateFormat.format(s.updated) }}</time>
+          <span class="session-preview">{{
             s.messages.length
               ? markdownPreview(content(s.messages.at(-1)!)) || "此回复未收到文字。"
               : "尚未开始，故事在等你。"
           }}</span
           ><span class="session-meta"
-            ><LoaderCircle v-if="busy(s)" :size="12" class="spin" /><span
+            ><span v-if="duplicateNumbers.has(s.id)">同名会话 {{ duplicateNumbers.get(s.id) }}</span><LoaderCircle v-if="busy(s)" :size="12" class="spin" /><span
               v-if="busy(s)"
               >正在生成</span
             ><span v-else-if="s.unread" class="unread-dot" /><span
